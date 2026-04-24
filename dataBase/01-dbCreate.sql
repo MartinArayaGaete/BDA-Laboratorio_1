@@ -8,6 +8,11 @@ CREATE TABLE IF NOT EXISTS usuario (
     rol VARCHAR(80) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS categoria (
+    id_categoria BIGINT PRIMARY KEY,
+    nombre_categoria VARCHAR(80) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS logs (
     id_logs BIGINT PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
@@ -17,27 +22,22 @@ CREATE TABLE IF NOT EXISTS logs (
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 );
 
-CREATE TABLE IF NOT EXISTS participacion (
-    id_participacion BIGINT PRIMARY KEY,
-    id_usuario BIGINT NOT NULL,
-    id_torneo BIGINT NOT NULL,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
-    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo)
-);
-
 CREATE TABLE IF NOT EXISTS torneo (
     id_torneo BIGINT PRIMARY KEY,
     id_categoria BIGINT NOT NULL,
     nombre_torneo VARCHAR(80) NOT NULL,
     estado_torneo VARCHAR(80) NOT NULL,
     fecha_inicio DATE NOT NULL,
-    fecha_termino DATE NOT NULL
+    fecha_termino DATE NOT NULL,
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
 );
 
-CREATE TABLE IF NOT EXISTS categoria (
-    id_categoria BIGINT PRIMARY KEY,
-    nombre_categoria VARCHAR(80) NOT NULL,
+CREATE TABLE IF NOT EXISTS participacion (
+    id_participacion BIGINT PRIMARY KEY,
+    id_usuario BIGINT NOT NULL,
+    id_torneo BIGINT NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo)
 );
 
 CREATE TABLE IF NOT EXISTS ronda (

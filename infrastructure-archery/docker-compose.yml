@@ -21,7 +21,7 @@ services:
 
   backend-archery:
     build:
-      context: ../backend/demo
+      context: ../demo/demo
       dockerfile: Dockerfile
     container_name: backend-archery
     ports:
@@ -60,6 +60,7 @@ services:
       PGTZ: "${APP_TIMEZONE:-America/Santiago}"
     volumes:
       - archeryPostgresData:/var/lib/postgresql/data
+      - ../dataBase:/docker-entrypoint-initdb.d
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     restart: unless-stopped
