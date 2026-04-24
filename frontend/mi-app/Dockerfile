@@ -9,6 +9,6 @@ COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 # Copy the rest of the application source code into the container
-COPY . .
+COPY .. .
 
 CMD ["npm", "run", "dev"]

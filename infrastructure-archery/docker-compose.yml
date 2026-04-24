@@ -2,7 +2,7 @@ services:
   frontend-archery:
     build:
       context: ../frontend
-      dockerfile: Dockerfile
+      dockerfile: ../frontend/mi-app/Dockerfile
     container_name: frontend-archery
     ports:
       - "${FRONT_PORT:-3000}:3000" # React
