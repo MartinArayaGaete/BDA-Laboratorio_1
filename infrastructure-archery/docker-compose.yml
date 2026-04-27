@@ -1,8 +1,8 @@
 services:
   frontend-archery:
     build:
-      context: ../frontend
-      dockerfile: ../frontend/mi-app/Dockerfile
+      context: ../frontend/mi-app
+      dockerfile: Dockerfile
     container_name: frontend-archery
     ports:
       - "${FRONT_PORT:-3000}:3000" # React
@@ -14,7 +14,7 @@ services:
 
       TZ: "${APP_TIMEZONE:-America/Santiago}"
     volumes:
-      - ../frontend:/app
+      - ../frontend/mi-app:/app
     restart: unless-stopped
     networks:
       - archeryNetwork
@@ -41,7 +41,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-12345}"
 
     volumes:
-      - ../backend:/app
+      - ../backend/demo:/app
     depends_on:
       database-archery:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
       PGTZ: "${APP_TIMEZONE:-America/Santiago}"
     volumes:
       - archeryPostgresData:/var/lib/postgresql/data
-      - ../dataBase:/docker-entrypoint-initdb.d
+      - ../database:/docker-entrypoint-initdb.d
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     restart: unless-stopped

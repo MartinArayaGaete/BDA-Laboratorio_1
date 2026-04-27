@@ -1,18 +1,9 @@
-DROP TABLE IF EXISTS flecha CASCADE;
-DROP TABLE IF EXISTS ronda CASCADE;
-DROP TABLE IF EXISTS participacion CASCADE;
-DROP TABLE IF EXISTS torneo CASCADE;
-DROP TABLE IF EXISTS logs CASCADE;
-DROP TABLE IF EXISTS categoria CASCADE;
-DROP TABLE IF EXISTS usuario CASCADE;
-
-
-CREATE TABLE categoria (
+CREATE IF NOT EXISTS TABLE  categoria (
     id_categoria BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre_categoria VARCHAR(80) NOT NULL
 );
 
-CREATE TABLE usuario (
+CREATE IF NOT EXISTS TABLE usuario (
     id_usuario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     rut VARCHAR(25) UNIQUE NOT NULL,
     nombre VARCHAR(80) NOT NULL,
@@ -21,7 +12,7 @@ CREATE TABLE usuario (
     rol VARCHAR(80) NOT NULL
 );
 
-CREATE TABLE logs (
+CREATE IF NOT EXISTS TABLE logs (
     id_logs BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -30,7 +21,7 @@ CREATE TABLE logs (
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 );
 
-CREATE TABLE torneo (
+CREATE IF NOT EXISTS TABLE torneo (
     id_torneo BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_categoria BIGINT NOT NULL,
     nombre_torneo VARCHAR(80) NOT NULL,
@@ -40,7 +31,7 @@ CREATE TABLE torneo (
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
 );
 
-CREATE TABLE participacion (
+CREATE IF NOT EXISTS TABLE participacion (
     id_participacion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
     id_torneo BIGINT NOT NULL,
@@ -48,14 +39,14 @@ CREATE TABLE participacion (
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
 
-CREATE TABLE ronda (
+CREATE IF NOT EXISTS TABLE ronda (
     id_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_participacion BIGINT NOT NULL,
     numero_ronda INT NOT NULL,
     FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion) ON DELETE CASCADE
 );
 
-CREATE TABLE flecha (
+CREATE IF NOT EXISTS TABLE flecha (
     id_flecha BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_ronda BIGINT NOT NULL,
     puntaje INTEGER,
