@@ -1,21 +1,24 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SidebarLayout from "./components/SidebarLayout";
 import Login from "./components/Login.jsx";
-
-function Home() {
-  return <h1></h1>;
-}
+import ArcherDashboard from "./components/ArcherDashboard.jsx";
 
 function App() {
   return (
     <BrowserRouter>
-      <SidebarLayout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </SidebarLayout>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route
+          path="/archer"
+          element={
+            <SidebarLayout>
+              <ArcherDashboard />
+            </SidebarLayout>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }
