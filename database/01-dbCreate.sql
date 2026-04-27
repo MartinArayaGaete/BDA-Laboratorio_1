@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS usuario (
     id_usuario BIGINT PRIMARY KEY,
     rut VARCHAR(20) NOT NULL,
@@ -16,10 +15,12 @@ CREATE TABLE IF NOT EXISTS categoria (
 CREATE TABLE IF NOT EXISTS logs (
     id_logs BIGINT PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
+    id_arquero BIGINT NOT NULL,
     fecha DATE NOT NULL,
-    tipo_movimiento VARCHAR(80) NOT NULL,
-    descripcion TEXT NOT NULL,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+    puntaje_anterior DECIMAL,
+    puntaje_nuevo DECIMAL,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_arquero) REFERENCES usuario(id_usuario)
 );
 
 CREATE TABLE IF NOT EXISTS torneo (
