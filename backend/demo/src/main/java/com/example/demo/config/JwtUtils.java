@@ -1,23 +1,22 @@
 package com.example.demo.config;
 
 import io.jsonwebtoken.*;
-import org.springframework.cglib.core.internal.Function;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.function.Function;
 
 @Component
 public class JwtUtils {
 
     private final String SECRET_KEY = "ClaveArchiSuperMegaHyperLargaYSeguraDonPeter1234567890abcdefg1234567890abcdefghijklmnopqrstuvxyzABCDEFGHIJKL";
 
-
-    private final long EXPIRATION = 60 *  60 * 60 * 60 * 1000; // 1 hora (en ms)
+    private final long EXPIRATION = 1000 * 60 * 60; // 1 hora en ms
 
     public String generateToken(String rut, String rol) {
         return Jwts.builder()
                 .setSubject(rut)
-                .claim("rol", rol) // Agrega el rol al token
+                .claim("rol", rol)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
                 .compact();

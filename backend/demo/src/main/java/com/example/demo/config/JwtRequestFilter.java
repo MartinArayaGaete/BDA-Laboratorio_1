@@ -1,9 +1,9 @@
 package com.example.demo.config;
 
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.List;
 
 @Component
@@ -33,21 +34,36 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException, java.io.IOException {
-        final String authorizationHeader = request.getHeader("Authorization");
+            throws ServletException, IOException {
 
-        String rut = null;
         String token = null;
+        String rut = null;
         String rol = null;
 
-        // Verificar si el header contiene "Bearer "
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            token = authorizationHeader.substring(7); // Extraer solo el token
+        // Buscar en las Cookies primero
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token_acceso".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        // Si no hay cookie, buscar en el Header Authorization (Manual/Postman)
+        if (token == null) {
+            String authorizationHeader = request.getHeader("Authorization");
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                token = authorizationHeader.substring(7);
+            }
+        }
+
+        // Si encontramos el token, extraemos los datos
+        if (token != null) {
             try {
                 rut = jwtUtils.extractRut(token);
                 rol = jwtUtils.extractClaim(token, claims -> claims.get("rol", String.class));
             } catch (ExpiredJwtException e) {
-                // Opcional: manejar expiración del token
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expirado");
                 return;
             } catch (Exception e) {
@@ -56,11 +72,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
 
-        // Si hay RUT y no hay autenticación activa, cargar usuario desde DB
+        // Si tenemos el RUT válido, autorizamos en Spring Security
         if (rut != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(rut);
 
-            // Validar token y configurar autenticación
             if (jwtUtils.validateToken(token)) {
                 GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + rol);
                 List<GrantedAuthority> authorities = List.of(authority);
@@ -74,5 +89,4 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 }
