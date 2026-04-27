@@ -7,27 +7,22 @@ import lombok.AllArgsConstructor;
 
 @Data
 @Entity
-@Table(name="usuario")
+@Table(name="participacion")
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserEntity {
+public class ParticipacionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique=true, nullable=false)
-    private Long id_usuario;
+    private Long id_participacion;
 
-    private String rut;
+    @ManyToOne
+    @JoinColumn(name = "id_usuario", nullable = false)
+    private UserEntity usuario;
 
-    private String correo;
-
-    private String nombre;
-
-    @Transient
-    private String contraseña;
-
-    private String rol;
-
-    private String keycloak_id;
+    @ManyToOne
+    @JoinColumn(name = "id_torneo", nullable = false)
+    private TorneoEntity torneo;
 
 }

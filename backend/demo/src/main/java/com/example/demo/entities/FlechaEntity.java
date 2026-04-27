@@ -4,30 +4,26 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.math.BigDecimal;
 
 @Data
 @Entity
-@Table(name="usuario")
+@Table(name="flecha")
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserEntity {
+public class FlechaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique=true, nullable=false)
-    private Long id_usuario;
+    private Long id_flecha;
 
-    private String rut;
+    @ManyToOne
+    @JoinColumn(name = "id_ronda", nullable = false)
+    private RondaEntity ronda;
 
-    private String correo;
-
-    private String nombre;
-
-    @Transient
-    private String contraseña;
-
-    private String rol;
-
-    private String keycloak_id;
+    private BigDecimal puntaje;
 
 }
+
+

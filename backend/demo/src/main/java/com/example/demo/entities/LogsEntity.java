@@ -7,27 +7,25 @@ import lombok.AllArgsConstructor;
 
 @Data
 @Entity
-@Table(name="usuario")
+@Table(name="logs")
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserEntity {
+
+public class LogsEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique=true, nullable=false)
-    private Long id_usuario;
+    private Long id_logs;
 
-    private String rut;
+    @ManyToOne
+    @JoinColumn(name = "id_usuario", nullable = false)
+    private UserEntity usuario;
 
-    private String correo;
+    private String tipo_movimiento;
 
-    private String nombre;
+    private String descripcion;
 
-    @Transient
-    private String contraseña;
-
-    private String rol;
-
-    private String keycloak_id;
+    private String fecha;
 
 }
