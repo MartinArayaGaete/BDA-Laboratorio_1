@@ -38,22 +38,25 @@ CREATE TABLE IF NOT EXISTS torneo (
 CREATE TABLE IF NOT EXISTS participacion (
     id_participacion BIGINT PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
-    id_ronda BIGINT NOT NULL,
+    id_torneo BIGINT NOT NULL,
     puntaje_final DECIMAL,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
-    FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda)
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
 
+-- En todas las rondas, todos los participantes del torneo participan.
 CREATE TABLE IF NOT EXISTS ronda (
     id_ronda BIGINT PRIMARY KEY,
     id_torneo BIGINT NOT NULL,
     numero_ronda INT NOT NULL,
-    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo)
+    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS flecha (
     id_flecha BIGINT PRIMARY KEY,
     id_participacion BIGINT NOT NULL,
+    id_ronda BIGINT NOT NULL,
     puntaje DECIMAL,
-    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion)
+    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion) ON DELETE CASCADE,
+    FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda) ON DELETE CASCADE
 );
