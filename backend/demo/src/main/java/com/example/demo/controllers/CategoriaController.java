@@ -21,6 +21,7 @@ public class CategoriaController {
         this.categoriaService = categoriaService;
     }
 
+    // Recupera la lista completa de categorias
     @GetMapping
     public ResponseEntity<List<Categoria>> obtenerTodas() {
         List<Categoria> categorias = categoriaService.obtenerTodas();
@@ -30,6 +31,7 @@ public class CategoriaController {
         return ResponseEntity.ok(categorias);
     }
 
+    // Obtiene una categoria especifica por su id
     @GetMapping("/{idCategoria}")
     public ResponseEntity<Categoria> obtenerPorId(@PathVariable Long idCategoria) {
         Optional<Categoria> categoria = categoriaService.buscarPorId(idCategoria);
@@ -37,12 +39,14 @@ public class CategoriaController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    // Crea una nueva categoria
     @PostMapping
     public ResponseEntity<String> crearCategoria(@RequestBody Categoria categoria) {
         categoriaService.crearCategoria(categoria);
         return ResponseEntity.status(HttpStatus.CREATED).body("Categoria creada exitosamente");
     }
 
+    // Actualiza una categoria existente
     @PutMapping("/{idCategoria}")
     public ResponseEntity<String> actualizarCategoria(@PathVariable Long idCategoria, @RequestBody Categoria categoria) {
         try {
@@ -53,6 +57,7 @@ public class CategoriaController {
         }
     }
 
+    // Elimina una categoria por su id
     @DeleteMapping("/{idCategoria}")
     public ResponseEntity<String> eliminarCategoria(@PathVariable Long idCategoria) {
         try {

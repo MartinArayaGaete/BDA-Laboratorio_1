@@ -17,6 +17,7 @@ public class RondaRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // Obtiene todas las rondas asociadas a un torneo
     public List<Ronda> buscarPorTorneo(Long idTorneo) {
         String sql = "SELECT * FROM ronda WHERE id_torneo = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -28,17 +29,20 @@ public class RondaRepository {
         }, idTorneo);
     }
 
+    // Crea una ronda para un torneo especifico
     public void crearRonda(Long idTorneo, Integer numeroRonda) {
         String sql = "INSERT INTO ronda (id_torneo, numero_ronda) VALUES (?, ?)";
         jdbcTemplate.update(sql, idTorneo, numeroRonda);
     }
 
+    // Verifica si una ronda ya existe en un torneo
     public boolean existeRonda(Long idTorneo, Integer numeroRonda) {
         String sql = "SELECT COUNT(*) FROM ronda WHERE id_torneo = ? AND numero_ronda = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idTorneo, numeroRonda);
         return count != null && count > 0;
     }
 
+    // Obtiene el id de la ronda para un torneo y numero dados
     public Optional<Long> obtenerIdRonda(Long idTorneo, Integer numeroRonda) {
         String sql = "SELECT id_ronda FROM ronda WHERE id_torneo = ? AND numero_ronda = ?";
         try {

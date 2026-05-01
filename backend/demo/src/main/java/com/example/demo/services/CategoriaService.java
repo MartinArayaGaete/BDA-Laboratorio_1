@@ -18,14 +18,17 @@ public class CategoriaService {
 		this.categoriaRepository = categoriaRepository;
 	}
 
+	// Retorna todas las categorias disponibles
 	public List<Categoria> obtenerTodas() {
 		return categoriaRepository.obtenerTodas();
 	}
 
+	// Retorna una categoria por id si existe
 	public Optional<Categoria> buscarPorId(Long idCategoria) {
 		return categoriaRepository.buscarPorId(idCategoria);
 	}
 
+	// Crea una categoria validando que el nombre no este vacio
 	public void crearCategoria(Categoria categoria) {
 		if (categoria == null || categoria.getNombreCategoria() == null || categoria.getNombreCategoria().isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoria es obligatorio");
@@ -33,6 +36,7 @@ public class CategoriaService {
 		categoriaRepository.crearCategoria(categoria.getNombreCategoria());
 	}
 
+	// Actualiza el nombre de una categoria existente
 	public void actualizarCategoria(Long idCategoria, Categoria categoria) {
 		if (categoria == null || categoria.getNombreCategoria() == null || categoria.getNombreCategoria().isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoria es obligatorio");
@@ -43,6 +47,7 @@ public class CategoriaService {
 		categoriaRepository.actualizarCategoria(idCategoria, categoria.getNombreCategoria());
 	}
 
+	// Elimina una categoria si existe
 	public void eliminarPorId(Long idCategoria) {
 		if (categoriaRepository.buscarPorId(idCategoria).isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoria no encontrada");
