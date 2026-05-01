@@ -1,8 +1,11 @@
-package com.example.demo.entities;
+package com.example.demo.models;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
