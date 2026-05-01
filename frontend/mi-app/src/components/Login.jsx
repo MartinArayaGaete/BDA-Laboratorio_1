@@ -14,7 +14,12 @@ function Login() {
     try {
       const userInfo = await loginService.login(rut, password);
       localStorage.setItem("usuarioLogueado", JSON.stringify(userInfo));
-      navigate("/archer");
+
+      if (userInfo.rol === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/archer");
+      }
     } catch (err) {
       setError("Credenciales incorrectas. Inténtalo de nuevo.");
     }
