@@ -14,13 +14,15 @@ CREATE TABLE IF NOT EXISTS categoria (
 
 CREATE TABLE IF NOT EXISTS logs (
     id_logs BIGINT PRIMARY KEY,
-    id_usuario BIGINT NOT NULL,
-    id_arquero BIGINT NOT NULL,
-    fecha DATE NOT NULL,
+    id_admin BIGINT NOT NULL,
+    id_afectado BIGINT NOT NULL,
+    fecha_editado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    torneo_afectado DECIMAL NOT NULL,
+    ronda_afectada DECIMAL NOT NULL,
     puntaje_anterior DECIMAL,
     puntaje_nuevo DECIMAL,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
-    FOREIGN KEY (id_arquero) REFERENCES usuario(id_usuario)
+    FOREIGN KEY (id_admin) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_afectado) REFERENCES usuario(id_usuario)
 );
 
 CREATE TABLE IF NOT EXISTS torneo (
@@ -36,21 +38,22 @@ CREATE TABLE IF NOT EXISTS torneo (
 CREATE TABLE IF NOT EXISTS participacion (
     id_participacion BIGINT PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
-    id_torneo BIGINT NOT NULL,
+    id_ronda BIGINT NOT NULL,
+    puntaje_final DECIMAL,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
-    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo)
+    FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda)
 );
 
 CREATE TABLE IF NOT EXISTS ronda (
     id_ronda BIGINT PRIMARY KEY,
-    id_participacion BIGINT NOT NULL,
+    id_torneo BIGINT NOT NULL,
     numero_ronda INT NOT NULL,
-    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion)
+    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo)
 );
 
 CREATE TABLE IF NOT EXISTS flecha (
     id_flecha BIGINT PRIMARY KEY,
-    id_ronda BIGINT NOT NULL,
+    id_participacion BIGINT NOT NULL,
     puntaje DECIMAL,
-    FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda)
+    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion)
 );
