@@ -9,11 +9,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-/*
-TODO: agregar paginación
-
- */
-
 @Repository
 public class UsuarioRepository {
 
@@ -23,7 +18,6 @@ public class UsuarioRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // toma un objeto, le mete un usuario y devuelve un objeto con los datos de usuario
     private Usuario mapRowToUsuario(ResultSet rs) throws SQLException {
         Usuario u = new Usuario();
         u.setIdUsuario(rs.getLong("id_usuario"));

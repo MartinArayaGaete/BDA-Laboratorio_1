@@ -5,10 +5,8 @@ import com.example.demo.dtos.UsuarioRegistroDTO;
 import com.example.demo.models.Usuario;
 import com.example.demo.repositories.UsuarioRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -16,11 +14,10 @@ import java.util.Optional;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder;
+    // private final PasswordEncoder passwordEncoder; // desactivado el bcrypt para pruebas
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     public List<Usuario> findAll() {
@@ -35,16 +32,16 @@ public class UsuarioService {
         if (usuarioRepository.existePorRut(dto.getRut())) {
             throw new IllegalArgumentException("El RUT ya está registrado");
         }
-        String hash = passwordEncoder.encode(dto.getContrasena());
-        usuarioRepository.crearUsuario(dto.getRut(), dto.getNombre(), dto.getCorreo(), hash, dto.getRol());
+        String passwordPlana = dto.getContrasena();
+        usuarioRepository.crearUsuario(dto.getRut(), dto.getNombre(), dto.getCorreo(), passwordPlana, dto.getRol());
     }
 
     public void update(String rut, UsuarioRegistroDTO dto) {
         if (!usuarioRepository.existePorRut(rut)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
-        String hash = passwordEncoder.encode(dto.getContrasena());
-        usuarioRepository.actualizarUsuario(rut, dto.getNombre(), dto.getCorreo(), hash, dto.getRol());
+        String passwordPlana = dto.getContrasena();
+        usuarioRepository.actualizarUsuario(rut, dto.getNombre(), dto.getCorreo(), passwordPlana, dto.getRol());
     }
 
     public void deleteByRut(String rut) {
@@ -55,7 +52,6 @@ public class UsuarioService {
         }
     }
 
-    // Aca se puede poner AESUtils mas adelante cuando hagamos el front
     public Optional<Usuario> validarLogin(String rut, String rawPassword) {
         Optional<Usuario> usuarioOpt = usuarioRepository.buscarPorRut(rut);
 
@@ -64,10 +60,10 @@ public class UsuarioService {
         }
 
         Usuario usuario = usuarioOpt.get();
-        String passwordEncriptadaBD = usuario.getContrasena();
+        String passwordBD = usuario.getContrasena();
 
-        // compara la contraseña guardada encriptada con la contraseña entregada por el usuario
-        if (passwordEncoder.matches(rawPassword, passwordEncriptadaBD)) {
+        // Comparación sin encriptar
+        if (rawPassword.equals(passwordBD)) {
             return Optional.of(usuario);
         }
 

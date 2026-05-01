@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +23,7 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    // Recupera una lista de todos los usuarios registrados transformados a formato de información pública (DTO)
     @GetMapping
     public ResponseEntity<List<UserInfoDTO>> getAllUsers() {
         List<Usuario> usuarios = usuarioService.findAll();
@@ -37,6 +37,7 @@ public class UsuarioController {
         return new ResponseEntity<>(usersDTO, HttpStatus.OK);
     }
 
+    // Busca y retorna la información de un usuario específico utilizando su RUT como identificador
     @GetMapping("/{rut}")
     public ResponseEntity<UserInfoDTO> getUserByRut(@PathVariable String rut) {
         Optional<Usuario> usuario = usuarioService.findByRut(rut);
@@ -44,6 +45,7 @@ public class UsuarioController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    // Registra un nuevo usuario en el sistema y retorna sus datos confirmados tras la creación
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UsuarioRegistroDTO dto) {
         try {
@@ -55,6 +57,7 @@ public class UsuarioController {
         }
     }
 
+    // Actualiza los datos de un usuario existente identificado por su RUT
     @PutMapping("/{rut}")
     public ResponseEntity<UserInfoDTO> updateUser(@PathVariable String rut, @RequestBody UsuarioRegistroDTO dto) {
         try {
@@ -66,6 +69,8 @@ public class UsuarioController {
         }
     }
 
+    // Elimina de forma permanente a un usuario del sistema basándose en su RUT
+    // Nota: esto es una mala practica, idealmente hay que implementar safe delete y tal
     @DeleteMapping("/{rut}")
     public ResponseEntity<Void> deleteUser(@PathVariable String rut) {
         try {
