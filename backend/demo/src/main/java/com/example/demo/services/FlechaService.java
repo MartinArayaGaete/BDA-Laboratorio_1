@@ -1,0 +1,43 @@
+package com.example.demo.services;
+
+import com.example.demo.dtos.FlechaArqueroDTO;
+import com.example.demo.repositories.FlechaRepository;
+import com.example.demo.repositories.ParticipacionRepository;
+import com.example.demo.repositories.RondaRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+@Service
+public class FlechaService {
+
+    private final ParticipacionRepository participacionRepository;
+    private final RondaRepository rondaRepository;
+    private final FlechaRepository flechaRepository;
+
+    public FlechaService(FlechaRepository flechaRepository, ParticipacionRepository participacionRepository, RondaRepository rondaRepository) {
+        this.flechaRepository = flechaRepository;
+        this.participacionRepository = participacionRepository;
+        this.rondaRepository = rondaRepository;
+    }
+
+    public List<FlechaArqueroDTO> obtenerFlechasArquero(Long idUsuario, Long idTorneo) {
+        return flechaRepository.obtenerFlechasDeArqueroEnTorneo(idUsuario, idTorneo);
+    }
+
+    public void registrarFlecha(Long idTorneo, Long idUsuario, Integer numeroRonda, Integer puntaje) {
+        if (puntaje < 0 || puntaje > 10) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trampa detectada: El puntaje debe estar entre 0 y 10");
+        }
+
+        Long idParticipacion = participacionRepository.obtenerIdParticipacion(idUsuario, idTorneo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El arquero no está inscrito en este torneo"));
+
+        Long idRonda = rondaRepository.obtenerIdRonda(idTorneo, numeroRonda)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La ronda " + numeroRonda + " no existe en este torneo"));
+
+        flechaRepository.guardarFlecha(idParticipacion, idRonda, puntaje);
+    }
+}
