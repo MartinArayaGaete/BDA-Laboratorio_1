@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import SidebarLayout from "./components/SidebarLayout";
+import NavbarLayout from "./components/NavbarLayout"; // <-- Actualizado
 import Login from "./components/Login.jsx";
 import ArcherDashboard from "./components/ArcherDashboard.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
@@ -15,17 +15,17 @@ function App() {
         <Route
           path="/admin"
           element={
-            <SidebarLayout>
+            <NavbarLayout>
               <AdminDashboard />
-            </SidebarLayout>
+            </NavbarLayout>
           }
         />
         <Route
           path="/archer"
           element={
-            <SidebarLayout>
+            <NavbarLayout>
               <ArcherDashboard />
-            </SidebarLayout>
+            </NavbarLayout>
           }
         />
       </Routes>

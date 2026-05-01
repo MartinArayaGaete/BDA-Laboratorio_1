@@ -29,7 +29,6 @@ function AdminDashboard() {
         Gestión global de torneos y arqueros registrados.
       </p>
 
-      {/* Tarjetas de Estadísticas (Estructura reciclable) */}
       <div className="row mb-4">
         <div className="col-md-4">
           <div className="card text-white bg-danger shadow-sm border-0">
@@ -43,7 +42,7 @@ function AdminDashboard() {
           <div className="card text-white bg-dark shadow-sm border-0">
             <div className="card-body">
               <h6 className="card-title">Torneos Activos</h6>
-              <h2 className="mb-0">1</h2> {/* Dato estático por ahora */}
+              <h2 className="mb-0">1</h2>
             </div>
           </div>
         </div>
@@ -51,13 +50,12 @@ function AdminDashboard() {
           <div className="card text-dark bg-light shadow-sm border-0">
             <div className="card-body">
               <h6 className="card-title">Torneos Finalizados</h6>
-              <h2 className="mb-0">4</h2> {/* Dato estático por ahora */}
+              <h2 className="mb-0">4</h2>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabla Principal */}
       <h5 className="text-dark fw-bold mb-3">Gestión de Usuarios</h5>
       {loading ? (
         <div className="alert alert-info">Cargando datos...</div>
