@@ -27,12 +27,13 @@ public class TorneoRepository {
         t.setEstadoTorneo(rs.getString("estado_torneo"));
         t.setFechaInicio(rs.getObject("fecha_inicio", LocalDate.class));
         t.setFechaTermino(rs.getObject("fecha_termino", LocalDate.class));
+        t.setPosicionFinal(rs.getObject("posicion_final", Integer.class));
         return t;
     }
 
     public void crearTorneo(Long idCategoria, String nombre, String estado, LocalDate inicio, LocalDate termino) {
-        String sql = "INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino) VALUES (?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, idCategoria, nombre, estado, inicio, termino);
+        String sql = "INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, posicion_final) VALUES (?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, idCategoria, nombre, estado, inicio, termino, null);
     }
 
     public List<Torneo> obtenerTodos() {

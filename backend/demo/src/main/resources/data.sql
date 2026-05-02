@@ -11,17 +11,17 @@ INSERT INTO usuario (rut, nombre, correo, contrasena, rol) VALUES
 ('5555555-5', 'Camila', 'camila.s@mail.com', 'arco123', 'ARQUERO'),
 ('6666666-6', 'Roberto', 'rsilva@mail.com', 'arco123', 'ARQUERO');
 
-INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino) VALUES
-(1, 'Copa Apertura USACH', 'FINALIZADO', '2026-02-08', '2026-02-09'),
-(2, 'Open Valle Central', 'FINALIZADO', '2026-02-22', '2026-02-23'),
-(3, 'Torneo Costa Norte', 'FINALIZADO', '2026-03-15', '2026-03-16'),
-(1, 'Ranking Otono Sur', 'FINALIZADO', '2026-04-12', '2026-04-13'),
-(2, 'Gran Premio Metropolitano', 'FINALIZADO', '2026-04-26', '2026-04-28'),
-(3, 'Copa Invierno 2026', 'CREADO', '2026-06-04', '2026-06-06'),
-(1, 'Abierto La Serena', 'CREADO', '2026-06-18', '2026-06-20'),
-(2, 'Clasificatorio Centro', 'CREADO', '2026-07-05', '2026-07-06'),
-(3, 'Copa Nacional Juvenil', 'CREADO', '2026-07-25', '2026-07-27'),
-(1, 'Festival Tiro al Aire', 'CREADO', '2026-08-15', '2026-08-16');
+INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, posicion_final) VALUES
+(1, 'Copa Apertura USACH', 'COMPLETED', '2026-02-08', '2026-02-09', 1),
+(2, 'Open Valle Central', 'COMPLETED', '2026-02-22', '2026-02-23', 1),
+(3, 'Torneo Costa Norte', 'COMPLETED', '2026-03-15', '2026-03-16', 1),
+(1, 'Ranking Otono Sur', 'COMPLETED', '2026-04-12', '2026-04-13', 1),
+(2, 'Gran Premio Metropolitano', 'COMPLETED', '2026-04-26', '2026-04-28', 1),
+(3, 'Copa Invierno 2026', 'NOT_STARTED', '2026-06-04', '2026-06-06', NULL),
+(1, 'Abierto La Serena', 'NOT_STARTED', '2026-06-18', '2026-06-20', NULL),
+(2, 'Clasificatorio Centro', 'NOT_STARTED', '2026-07-05', '2026-07-06', NULL),
+(3, 'Copa Nacional Juvenil', 'NOT_STARTED', '2026-07-25', '2026-07-27', NULL),
+(1, 'Festival Tiro al Aire', 'NOT_STARTED', '2026-08-15', '2026-08-16', NULL);
 
 INSERT INTO ronda (id_torneo, numero_ronda) VALUES
 (1, 1), (1, 2),

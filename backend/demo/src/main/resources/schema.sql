@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS torneo (
     estado_torneo VARCHAR(80) NOT NULL,
     fecha_inicio DATE NOT NULL,
     fecha_termino DATE NOT NULL,
+    posicion_final INT,
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
 );
 
