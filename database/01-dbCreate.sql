@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS usuario (
-    id_usuario BIGINT PRIMARY KEY,
+    id_usuario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     rut VARCHAR(20) NOT NULL,
     nombre VARCHAR(80) NOT NULL,
     correo VARCHAR(80) NOT NULL,
@@ -8,12 +8,12 @@ CREATE TABLE IF NOT EXISTS usuario (
 );
 
 CREATE TABLE IF NOT EXISTS categoria (
-    id_categoria BIGINT PRIMARY KEY,
+    id_categoria BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre_categoria VARCHAR(80) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS logs (
-    id_logs BIGINT PRIMARY KEY,
+    id_logs BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_admin BIGINT NOT NULL,
     id_afectado BIGINT NOT NULL,
     fecha_editado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS logs (
 );
 
 CREATE TABLE IF NOT EXISTS torneo (
-    id_torneo BIGINT PRIMARY KEY,
+    id_torneo BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_categoria BIGINT NOT NULL,
     nombre_torneo VARCHAR(80) NOT NULL,
     estado_torneo VARCHAR(80) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS torneo (
 );
 
 CREATE TABLE IF NOT EXISTS participacion (
-    id_participacion BIGINT PRIMARY KEY,
+    id_participacion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
     id_torneo BIGINT NOT NULL,
     puntaje_final DECIMAL,
@@ -47,14 +47,14 @@ CREATE TABLE IF NOT EXISTS participacion (
 
 -- En todas las rondas, todos los participantes del torneo participan.
 CREATE TABLE IF NOT EXISTS ronda (
-    id_ronda BIGINT PRIMARY KEY,
+    id_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_torneo BIGINT NOT NULL,
     numero_ronda INT NOT NULL,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS puntaje_ronda (
-    id_puntaje_ronda BIGINT PRIMARY KEY,
+    id_puntaje_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_ronda BIGINT NOT NULL,
     id_participacion BIGINT NOT NULL,
     puntaje_ronda DECIMAL,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS puntaje_ronda (
 );
 
 CREATE TABLE IF NOT EXISTS flecha (
-    id_flecha BIGINT PRIMARY KEY,
+    id_flecha BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_puntaje_ronda BIGINT NOT NULL,
     puntaje DECIMAL,
     FOREIGN KEY (id_puntaje_ronda) REFERENCES puntaje_ronda(id_puntaje_ronda) ON DELETE CASCADE
