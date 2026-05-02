@@ -48,8 +48,20 @@ INSERT INTO participacion (id_usuario, id_torneo, puntaje_final) VALUES
 (5, 5, 85);
 
 INSERT INTO flecha (id_participacion, id_ronda, puntaje)
-SELECT v.id_participacion, v.id_ronda, FLOOR(RANDOM() * 101)::int
+SELECT
+	base.id_participacion,
+	base.id_ronda,
+	CASE
+		WHEN base.rn % 17 = 0 THEN 0
+		WHEN base.rn % 19 = 0 THEN 100
+		ELSE FLOOR(RANDOM() * 101)::int
+	END AS puntaje
 FROM (
+	SELECT
+		v.id_participacion,
+		v.id_ronda,
+		ROW_NUMBER() OVER () AS rn
+	FROM (
 	VALUES
 	(1, 1), (1, 1), (1, 1),
 	(1, 2), (1, 2), (1, 2),
@@ -87,7 +99,8 @@ FROM (
 	(15, 10), (15, 10), (15, 10),
 	(15, 11), (15, 11), (15, 11),
 	(15, 12), (15, 12), (15, 12)
-) AS v(id_participacion, id_ronda);
+	) AS v(id_participacion, id_ronda)
+) AS base;
 
 UPDATE participacion p
 SET puntaje_final = COALESCE((
