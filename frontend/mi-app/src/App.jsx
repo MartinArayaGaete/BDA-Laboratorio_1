@@ -28,10 +28,7 @@ function App() {
             </NavbarLayout>
           }
         />
-        <Route
-          path="/arhcer"
-          element={<Navigate to="/archer" replace />}
-        />
+        <Route path="/arhcer" element={<Navigate to="/archer" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,103 +1,124 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import usuarioService from "../api/apiUsuarios";
+import torneoService from "../api/apiTorneos";
+import participacionService from "../api/apiParticipaciones";
+import TorneoModal from "./TorneoModal"; // Importamos el nuevo componente
 
 function AdminDashboard() {
   const [usuarios, setUsuarios] = useState([]);
+  const [torneos, setTorneos] = useState([]);
+  const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // Estados para el modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState("");
+  const [selectedTorneo, setSelectedTorneo] = useState(null);
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await usuarioService.obtenerTodos();
-        setUsuarios(data);
-      } catch (error) {
-        localStorage.removeItem("usuarioLogueado");
-        navigate("/login");
-      } finally {
-        setLoading(false);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [u, t] = await Promise.all([
+        usuarioService.obtenerTodos(),
+        torneoService.obtenerTodos(),
+      ]);
+      setUsuarios(u);
+      setTorneos(t);
+
+      const cMap = {};
+      for (const item of t) {
+        const ins = await participacionService.obtenerInscritosPorTorneo(
+          item.idTorneo,
+        );
+        cMap[item.idTorneo] = ins.length;
       }
-    };
-    fetchData();
+      setCounts(cMap);
+    } catch (e) {
+      navigate("/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [navigate]);
+
+  const openModal = (torneo, type) => {
+    setSelectedTorneo(torneo);
+    setModalType(type);
+    setModalOpen(true);
+  };
+
+  const handleFinalizar = async (id) => {
+    if (window.confirm("¿Cerrar torneo y calcular ranking?")) {
+      await torneoService.finalizarTorneo(id);
+      loadData();
+    }
+  };
 
   return (
     <div className="container mt-4">
-      <h2 className="mb-1 text-dark fw-bold">🛠️ Panel de Administración</h2>
-      <p className="text-dark mb-4">
-        Gestión global de torneos y arqueros registrados.
-      </p>
+      <h2 className="fw-bold mb-4">🛠️ Panel de Administración</h2>
 
-      <div className="row mb-4">
-        <div className="col-md-4">
-          <div className="card text-white bg-danger shadow-sm border-0">
-            <div className="card-body">
-              <h6 className="card-title">Total Arqueros</h6>
-              <h2 className="mb-0">{usuarios.length}</h2>
+      <div className="row">
+        {torneos.map((t) => (
+          <div className="col-md-6 mb-3" key={t.idTorneo}>
+            <div className="card shadow-sm border-0">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-start">
+                  <h6 className="fw-bold text-primary">{t.nombreTorneo}</h6>
+                  <span
+                    className={`badge ${t.estadoTorneo === "COMPLETED" ? "bg-success" : "bg-warning"}`}
+                  >
+                    {t.estadoTorneo}
+                  </span>
+                </div>
+                <p className="small mb-2">
+                  👥 Participantes: {counts[t.idTorneo] || 0}
+                </p>
+
+                <div className="d-flex gap-2 mt-3">
+                  {t.estadoTorneo !== "COMPLETED" ? (
+                    <>
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => openModal(t, "PUNTAJES")}
+                      >
+                        🎯 Puntos
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleFinalizar(t.idTorneo)}
+                      >
+                        Cerrar (SP2)
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn btn-sm btn-outline-dark"
+                      onClick={() => openModal(t, "PODIO")}
+                    >
+                      🏆 Ver Podio
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card text-white bg-dark shadow-sm border-0">
-            <div className="card-body">
-              <h6 className="card-title">Torneos Activos</h6>
-              <h2 className="mb-0">1</h2>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card text-dark bg-light shadow-sm border-0">
-            <div className="card-body">
-              <h6 className="card-title">Torneos Finalizados</h6>
-              <h2 className="mb-0">4</h2>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      <h5 className="text-dark fw-bold mb-3">Gestión de Usuarios</h5>
-      {loading ? (
-        <div className="alert alert-info">Cargando datos...</div>
-      ) : (
-        <div className="card shadow-sm border-0">
-          <div className="card-body p-0">
-            <table className="table table-hover mb-0">
-              <thead className="table-dark">
-                <tr>
-                  <th>Nombre</th>
-                  <th>RUT</th>
-                  <th>Rol</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="text-dark">
-                {usuarios.map((u) => (
-                  <tr key={u.idUsuario}>
-                    <td className="fw-medium">{u.nombre}</td>
-                    <td>{u.rut}</td>
-                    <td>
-                      <span
-                        className={`badge ${u.rol === "ADMIN" ? "bg-danger" : "bg-primary"}`}
-                      >
-                        {u.rol}
-                      </span>
-                    </td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-secondary me-2">
-                        Editar
-                      </button>
-                      <button className="btn btn-sm btn-outline-danger">
-                        Bloquear
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* MODAL */}
+      <TorneoModal
+        show={modalOpen}
+        onClose={() => setModalOpen(false)}
+        torneo={selectedTorneo}
+        tipo={modalType}
+      />
     </div>
   );
 }
