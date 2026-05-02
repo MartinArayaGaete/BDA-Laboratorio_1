@@ -35,17 +35,6 @@ public class TorneoController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Torneo creado exitosamente");
     }
 
-    @PostMapping("/{idTorneo}/inscribir/{idUsuario}")
-    public ResponseEntity<String> inscribirArquero(@PathVariable Long idTorneo, @PathVariable Long idUsuario) {
-        torneoService.inscribirArquero(idUsuario, idTorneo);
-        return ResponseEntity.ok("Inscripción realizada con éxito");
-    }
-
-    @GetMapping("/{idTorneo}/inscritos")
-    public ResponseEntity<List<com.example.demo.dtos.InscritoDTO>> verInscritos(@PathVariable Long idTorneo) {
-        return ResponseEntity.ok(torneoService.obtenerInscritos(idTorneo));
-    }
-
     @GetMapping("/{idTorneo}/arqueros/{idUsuario}/flechas")
     public ResponseEntity<List<FlechaArqueroDTO>> verFlechasDeArquero(@PathVariable Long idTorneo, @PathVariable Long idUsuario) {
         return ResponseEntity.ok(flechaService.obtenerFlechasArquero(idUsuario, idTorneo));
