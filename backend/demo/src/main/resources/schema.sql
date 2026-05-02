@@ -1,16 +1,16 @@
-DROP TABLE IF EXISTS flecha CASCADE;
-DROP TABLE IF EXISTS puntaje_ronda CASCADE;
-DROP TABLE IF EXISTS ronda CASCADE;
-DROP TABLE IF EXISTS participacion CASCADE;
-DROP TABLE IF EXISTS torneo CASCADE;
-DROP TABLE IF EXISTS logs CASCADE;
-DROP TABLE IF EXISTS usuario CASCADE;
-DROP TABLE IF EXISTS categoria CASCADE;
+DROP TABLE IF EXISTS flecha CASCADE;;
+DROP TABLE IF EXISTS puntaje_ronda CASCADE;;
+DROP TABLE IF EXISTS ronda CASCADE;;
+DROP TABLE IF EXISTS participacion CASCADE;;
+DROP TABLE IF EXISTS torneo CASCADE;;
+DROP TABLE IF EXISTS logs CASCADE;;
+DROP TABLE IF EXISTS usuario CASCADE;;
+DROP TABLE IF EXISTS categoria CASCADE;;
 
 CREATE TABLE categoria (
     id_categoria BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre_categoria VARCHAR(80) NOT NULL
-);
+);;
 
 CREATE TABLE usuario (
     id_usuario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -19,7 +19,7 @@ CREATE TABLE usuario (
     correo VARCHAR(80) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     rol VARCHAR(80) NOT NULL
-);
+);;
 
 CREATE TABLE logs (
     id_logs BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -32,7 +32,7 @@ CREATE TABLE logs (
     puntaje_nuevo INT,
     FOREIGN KEY (id_admin) REFERENCES usuario(id_usuario),
     FOREIGN KEY (id_afectado) REFERENCES usuario(id_usuario)
-);
+);;
 
 CREATE TABLE torneo (
     id_torneo BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -42,7 +42,7 @@ CREATE TABLE torneo (
     fecha_inicio DATE NOT NULL,
     fecha_termino DATE NOT NULL,
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
-);
+);;
 
 CREATE TABLE participacion (
     id_participacion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -52,14 +52,14 @@ CREATE TABLE participacion (
     posicion_final INT, -- AGREGADO: Aquí es donde pertenece la posición
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
-);
+);;
 
 CREATE TABLE ronda (
     id_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_torneo BIGINT NOT NULL,
     numero_ronda INT NOT NULL,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
-);
+);;
 
 CREATE TABLE puntaje_ronda (
     id_puntaje_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -68,7 +68,7 @@ CREATE TABLE puntaje_ronda (
     puntaje_ronda INT DEFAULT 0,
     FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda) ON DELETE CASCADE,
     FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion) ON DELETE CASCADE
-);
+);;
 
 
 CREATE TABLE flecha (
@@ -76,4 +76,4 @@ CREATE TABLE flecha (
     id_puntaje_ronda BIGINT NOT NULL,
     puntaje INT NOT NULL,
     FOREIGN KEY (id_puntaje_ronda) REFERENCES puntaje_ronda(id_puntaje_ronda) ON DELETE CASCADE
-);
+);;

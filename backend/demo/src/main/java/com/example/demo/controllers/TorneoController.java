@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.dtos.InscritoDTO;
 import com.example.demo.dtos.TorneoCreacionDTO;
 import com.example.demo.dtos.FlechaArqueroDTO;
 import com.example.demo.models.Torneo;
@@ -60,5 +61,17 @@ public class TorneoController {
 
         flechaService.registrarRondaCompleta(idTorneo, idUsuario, numeroRonda, flechas);
         return ResponseEntity.status(HttpStatus.CREATED).body("¡Ronda registrada con éxito mediante Procedimiento Almacenado!");
+    }
+
+    // Endpoint para finalizar el torneo y disparar el SP de ranking
+    @PostMapping("/{idTorneo}/finalizar")
+    public ResponseEntity<String> finalizarTorneo(@PathVariable Long idTorneo) {
+        torneoService.finalizarTorneo(idTorneo);
+        return ResponseEntity.ok("Torneo finalizado y posiciones calculadas con éxito mediante SP.");
+    }
+
+    @GetMapping("/{idTorneo}/podio")
+    public ResponseEntity<List<InscritoDTO>> obtenerPodio(@PathVariable Long idTorneo) {
+        return ResponseEntity.ok(torneoService.obtenerPodio(idTorneo));
     }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.repositories;
 
+import com.example.demo.dtos.InscritoDTO;
 import com.example.demo.models.Torneo;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,5 +41,37 @@ public class TorneoRepository {
 
     public Optional<Torneo> buscarPorId(Long idTorneo) {
         try { return Optional.ofNullable(jdbcTemplate.queryForObject("SELECT * FROM torneo WHERE id_torneo = ?", (rs, rowNum) -> mapRowToTorneo(rs), idTorneo)); } catch (EmptyResultDataAccessException e) { return Optional.empty(); }
+    }
+
+    //  cambiar el estado del torneo
+    public void finalizarTorneo(Long idTorneo) {
+        jdbcTemplate.update("UPDATE torneo SET estado_torneo = 'COMPLETED' WHERE id_torneo = ?", idTorneo);
+    }
+
+    //  ejecuta el Procedimiento Almacenado 2
+    public void actualizarPosicionesSP(Long idTorneo) {
+        jdbcTemplate.update("CALL actualizar_posiciones(?)", idTorneo);
+    }
+
+    // No olvides agregar este import arriba:
+// import com.example.demo.dtos.InscritoDTO;
+
+    public List<InscritoDTO> obtenerPodio(Long idTorneo) {
+        String sql = """
+            SELECT p.id_participacion, u.id_usuario, u.rut, u.nombre 
+            FROM participacion p 
+            JOIN usuario u ON p.id_usuario = u.id_usuario 
+            WHERE p.id_torneo = ? AND p.posicion_final <= 3 
+            ORDER BY p.posicion_final ASC
+        """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            InscritoDTO dto = new InscritoDTO();
+            dto.setIdParticipacion(rs.getLong("id_participacion"));
+            dto.setIdUsuario(rs.getLong("id_usuario"));
+            dto.setRut(rs.getString("rut"));
+            dto.setNombre(rs.getString("nombre"));
+            return dto;
+        }, idTorneo);
     }
 }
