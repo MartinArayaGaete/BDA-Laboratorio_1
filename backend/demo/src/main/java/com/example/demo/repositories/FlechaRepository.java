@@ -1,8 +1,12 @@
 package com.example.demo.repositories;
 
 import com.example.demo.dtos.FlechaArqueroDTO;
+import org.springframework.jdbc.core.CallableStatementCallback;
+import org.springframework.jdbc.core.CallableStatementCreator;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
+import java.sql.CallableStatement;
 import java.util.List;
 
 @Repository
@@ -18,8 +22,9 @@ public class FlechaRepository {
         String sql = """
                 SELECT r.numero_ronda, f.id_flecha, f.puntaje
                 FROM flecha f
-                INNER JOIN participacion p ON f.id_participacion = p.id_participacion
-                INNER JOIN ronda r ON f.id_ronda = r.id_ronda
+                INNER JOIN puntaje_ronda pr ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+                INNER JOIN participacion p ON pr.id_participacion = p.id_participacion
+                INNER JOIN ronda r ON pr.id_ronda = r.id_ronda
                 WHERE p.id_usuario = ? AND p.id_torneo = ?
                 ORDER BY r.numero_ronda ASC, f.id_flecha ASC
                 """;
@@ -34,7 +39,25 @@ public class FlechaRepository {
     }
 
     public void guardarFlecha(Long idParticipacion, Long idRonda, Integer puntaje) {
-        String sql = "INSERT INTO flecha (id_participacion, id_ronda, puntaje) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO flecha (id_puntaje_ronda, puntaje) VALUES ((SELECT id_puntaje_ronda FROM" +
+                " puntaje_ronda WHERE id_participacion = ? AND id_ronda = ?), ?)";
         jdbcTemplate.update(sql, idParticipacion, idRonda, puntaje);
+    }
+
+    // Ejecuta el Procedimiento Almacenado 1 de PostgreSQL
+    public void guardarRondaCompletaSP(Long idParticipacion, Long idRonda, List<Integer> flechas) {
+        jdbcTemplate.execute(
+                (CallableStatementCreator) connection -> {
+                    CallableStatement cs = connection.prepareCall("CALL registrar_ronda_completa(?, ?, ?)");
+                    cs.setLong(1, idParticipacion);
+                    cs.setLong(2, idRonda);
+                    cs.setArray(3, connection.createArrayOf("int4", flechas.toArray()));
+                    return cs;
+                },
+                (CallableStatementCallback<Void>) cs -> {
+                    cs.execute();
+                    return null;
+                }
+        );
     }
 }

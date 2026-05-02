@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Flecha {
     private Long idFlecha;
-    private Long idParticipacion; // FK
-    private Long idRonda;         // FK
+    private Long idPuntajeRonda; // FK
     private Integer puntaje;
 }

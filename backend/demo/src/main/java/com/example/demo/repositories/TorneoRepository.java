@@ -27,27 +27,18 @@ public class TorneoRepository {
         t.setEstadoTorneo(rs.getString("estado_torneo"));
         t.setFechaInicio(rs.getObject("fecha_inicio", LocalDate.class));
         t.setFechaTermino(rs.getObject("fecha_termino", LocalDate.class));
-        t.setPosicionFinal(rs.getObject("posicion_final", Integer.class));
         return t;
     }
 
     public void crearTorneo(Long idCategoria, String nombre, String estado, LocalDate inicio, LocalDate termino) {
-        String sql = "INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, posicion_final) VALUES (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, idCategoria, nombre, estado, inicio, termino, null);
+        jdbcTemplate.update("INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino) VALUES (?, ?, ?, ?, ?)", idCategoria, nombre, estado, inicio, termino);
     }
 
     public List<Torneo> obtenerTodos() {
-        String sql = "SELECT * FROM torneo";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowToTorneo(rs));
+        return jdbcTemplate.query("SELECT * FROM torneo", (rs, rowNum) -> mapRowToTorneo(rs));
     }
 
     public Optional<Torneo> buscarPorId(Long idTorneo) {
-        String sql = "SELECT * FROM torneo WHERE id_torneo = ?";
-        try {
-            Torneo torneo = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> mapRowToTorneo(rs), idTorneo);
-            return Optional.ofNullable(torneo);
-        } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
-        }
+        try { return Optional.ofNullable(jdbcTemplate.queryForObject("SELECT * FROM torneo WHERE id_torneo = ?", (rs, rowNum) -> mapRowToTorneo(rs), idTorneo)); } catch (EmptyResultDataAccessException e) { return Optional.empty(); }
     }
 }

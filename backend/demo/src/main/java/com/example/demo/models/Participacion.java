@@ -12,4 +12,5 @@ public class Participacion {
     private Long idUsuario; // FK
     private Long idTorneo;  // FK
     private Integer puntajeFinal;
+    private Integer posicionFinal;
 }

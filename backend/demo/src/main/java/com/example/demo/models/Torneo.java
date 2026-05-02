@@ -15,5 +15,4 @@ public class Torneo {
     private String estadoTorneo;
     private LocalDate fechaInicio;
     private LocalDate fechaTermino;
-    private Integer posicionFinal;
 }
