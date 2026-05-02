@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS participacion (
     id_usuario BIGINT NOT NULL,
     id_torneo BIGINT NOT NULL,
     puntaje_final DECIMAL,
+    posicion_final INT,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
