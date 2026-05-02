@@ -80,7 +80,7 @@ function ArcherDashboard() {
         ) : (
           <div className="row">
             {torneos
-              .filter(t => (t.estadoTorneo || "").toUpperCase() === "CREADO")
+              .filter(t => (t.estadoTorneo || "").toUpperCase() === "COMPLETED")
               .map(t => (
                 <div className="col-md-6 mb-3" key={t.idTorneo}>
                   <div className="card p-3">
@@ -118,3 +118,19 @@ function ArcherDashboard() {
 }
 
 export default ArcherDashboard;
+// comandos para interactuar con BD
+
+// para meterse a la BD
+// docker exec -i LAB1_BDA psql -U postgres -d postgres
+
+// para limpiar todo
+// TRUNCATE TABLE flecha, ronda, participacion, torneo, logs, usuario, categoria RESTART IDENTITY CASCADE;
+
+
+// cargar datos:
+// docker exec -i LAB1_BDA psql -U postgres -d postgres < /home/martin/Descargas/BDA/Laboratorios/Lab1/Codigo-fuente/BDA-Laboratorio_1/backend/demo/src/main/resources/data.sql
+
+
+// [para borrar todo];
+// DROP SCHEMA public CASCADE;
+// CREATE SCHEMA public;

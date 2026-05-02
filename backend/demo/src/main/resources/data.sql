@@ -3,8 +3,8 @@ INSERT INTO categoria (nombre_categoria) VALUES
 ('Recurvo 70m Avanzado'),
 ('Compuesto 50m Libre');
 
-INSERT INTO usuario (rut, nombre, correo, contrasena, rol) VALUES
-('1111111-1', 'Admin', 'admin@sistema.cl', 'admin123', 'ADMIN'),
+INSERT INTO usuario (rut, nombre, correo, contrasena, rol) VALUES 
+('1111111-1', 'Admin', 'admin@sistema.cl', 'admin123', 'ADMIN'), 
 ('2222222-2', 'Jose', 'jose@usach.cl', 'arco123', 'ARQUERO'),
 ('3333333-3', 'Andrea', 'andrea.m@clublacisterna.cl', 'arco123', 'ARQUERO'),
 ('4444444-4', 'Carlos', 'carlos.vargas@mail.com', 'arco123', 'ARQUERO'),
