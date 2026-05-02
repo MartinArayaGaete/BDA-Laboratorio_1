@@ -1,0 +1,86 @@
+INSERT INTO categoria (nombre_categoria) VALUES
+('Recurvo 18m Novatos'),
+('Recurvo 70m Avanzado'),
+('Compuesto 50m Libre');
+
+INSERT INTO usuario (rut, nombre, correo, contrasena, rol) VALUES
+('1111111-1', 'Admin', 'admin@sistema.cl', 'admin123', 'ADMIN'),
+('2222222-2', 'Jose', 'jose@usach.cl', 'arco123', 'ARQUERO'),
+('3333333-3', 'Andrea', 'andrea.m@clublacisterna.cl', 'arco123', 'ARQUERO'),
+('4444444-4', 'Carlos', 'carlos.vargas@mail.com', 'arco123', 'ARQUERO'),
+('5555555-5', 'Camila', 'camila.s@mail.com', 'arco123', 'ARQUERO'),
+('6666666-6', 'Roberto', 'rsilva@mail.com', 'arco123', 'ARQUERO');
+
+INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino) VALUES
+(1, 'Copa Apertura USACH', 'FINALIZADO', '2026-02-08', '2026-02-09'),
+(2, 'Open Valle Central', 'FINALIZADO', '2026-02-22', '2026-02-23'),
+(3, 'Torneo Costa Norte', 'FINALIZADO', '2026-03-15', '2026-03-16'),
+(1, 'Ranking Otono Sur', 'FINALIZADO', '2026-04-12', '2026-04-13'),
+(2, 'Gran Premio Metropolitano', 'FINALIZADO', '2026-04-26', '2026-04-28'),
+(3, 'Copa Invierno 2026', 'CREADO', '2026-06-04', '2026-06-06'),
+(1, 'Abierto La Serena', 'CREADO', '2026-06-18', '2026-06-20'),
+(2, 'Clasificatorio Centro', 'CREADO', '2026-07-05', '2026-07-06'),
+(3, 'Copa Nacional Juvenil', 'CREADO', '2026-07-25', '2026-07-27'),
+(1, 'Festival Tiro al Aire', 'CREADO', '2026-08-15', '2026-08-16');
+
+INSERT INTO ronda (id_torneo, numero_ronda) VALUES
+(1, 1), (1, 2),
+(2, 1), (2, 2),
+(3, 1), (3, 2),
+(4, 1), (4, 2), (4, 3),
+(5, 1), (5, 2), (5, 3);
+
+INSERT INTO participacion (id_usuario, id_torneo, puntaje_final) VALUES
+(2, 1, 56),
+(3, 1, 53),
+(4, 1, 49),
+(3, 2, 55),
+(4, 2, 48),
+(5, 2, 55),
+(2, 3, 53),
+(5, 3, 47),
+(6, 3, 56),
+(2, 4, 83),
+(3, 4, 74),
+(6, 4, 84),
+(3, 5, 83),
+(4, 5, 64),
+(5, 5, 85);
+
+INSERT INTO flecha (id_participacion, id_ronda, puntaje) VALUES
+(1, 1, 10), (1, 1, 9), (1, 1, 9),
+(1, 2, 10), (1, 2, 10), (1, 2, 8),
+(2, 1, 9), (2, 1, 8), (2, 1, 8),
+(2, 2, 10), (2, 2, 9), (2, 2, 9),
+(3, 1, 7), (3, 1, 8), (3, 1, 8),
+(3, 2, 9), (3, 2, 8), (3, 2, 9),
+(4, 3, 10), (4, 3, 9), (4, 3, 10),
+(4, 4, 9), (4, 4, 9), (4, 4, 8),
+(5, 3, 8), (5, 3, 7), (5, 3, 8),
+(5, 4, 9), (5, 4, 8), (5, 4, 8),
+(6, 3, 9), (6, 3, 9), (6, 3, 8),
+(6, 4, 10), (6, 4, 9), (6, 4, 10),
+(7, 5, 8), (7, 5, 9), (7, 5, 8),
+(7, 6, 9), (7, 6, 10), (7, 6, 9),
+(8, 5, 7), (8, 5, 8), (8, 5, 7),
+(8, 6, 8), (8, 6, 8), (8, 6, 9),
+(9, 5, 9), (9, 5, 9), (9, 5, 10),
+(9, 6, 10), (9, 6, 9), (9, 6, 9),
+(10, 7, 10), (10, 7, 10), (10, 7, 9),
+(10, 8, 9), (10, 8, 9), (10, 8, 9),
+(10, 9, 10), (10, 9, 8), (10, 9, 9),
+(11, 7, 8), (11, 7, 8), (11, 7, 8),
+(11, 8, 8), (11, 8, 9), (11, 8, 8),
+(11, 9, 9), (11, 9, 8), (11, 9, 8),
+(12, 7, 9), (12, 7, 9), (12, 7, 9),
+(12, 8, 10), (12, 8, 10), (12, 8, 9),
+(12, 9, 9), (12, 9, 10), (12, 9, 9),
+(13, 10, 9), (13, 10, 10), (13, 10, 9),
+(13, 11, 9), (13, 11, 9), (13, 11, 8),
+(13, 12, 10), (13, 12, 9), (13, 12, 10),
+(14, 10, 8), (14, 10, 8), (14, 10, 7),
+(14, 11, 9), (14, 11, 8), (14, 11, 8),
+(14, 12, 8), (14, 12, 9), (14, 12, 8),
+(15, 10, 10), (15, 10, 9), (15, 10, 9),
+(15, 11, 10), (15, 11, 10), (15, 11, 9),
+(15, 12, 9), (15, 12, 9), (15, 12, 10);
