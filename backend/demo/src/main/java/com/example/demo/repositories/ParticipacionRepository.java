@@ -6,6 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.jdbc.core.ConnectionCallback;
+import java.sql.PreparedStatement;
 
 @Repository
 public class ParticipacionRepository {
@@ -53,5 +55,34 @@ public class ParticipacionRepository {
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
+    }
+
+    public void actualizarPuntajeFinalConTrigger(Long idAdmin, Long idRondaAfectada, Integer puntajeFinal, Long idUsuario, Long idTorneo) {
+        jdbcTemplate.execute((ConnectionCallback<Void>) conn -> {
+            
+            // Usamos try-with-resources para asegurar que los PreparedStatements se cierren
+            try (
+                PreparedStatement ps1 = conn.prepareStatement("SET LOCAL my.user_id = ?");
+                PreparedStatement ps2 = conn.prepareStatement("SET LOCAL my.ronda_id = ?");
+                PreparedStatement ps3 = conn.prepareStatement(
+                    "UPDATE participacion SET puntaje_final = ? WHERE id_usuario = ? AND id_torneo = ?"
+                )
+            ) {
+                // 1. Seteamos el ID de quien hace el cambio (Para el Trigger)
+                ps1.setLong(1, idAdmin);
+                ps1.execute();
+
+                // 2. Seteamos el ID de la ronda afectada (Para el Trigger)
+                ps2.setLong(1, idRondaAfectada);
+                ps2.execute();
+
+                // 3. Ejecutamos el Update real de la tabla
+                ps3.setInt(1, puntajeFinal);
+                ps3.setLong(2, idUsuario);
+                ps3.setLong(3, idTorneo);
+                ps3.executeUpdate();
+            }
+            return null; // El callback requiere retornar algo, mandamos null
+        });
     }
 }
