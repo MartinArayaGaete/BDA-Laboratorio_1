@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.dtos.InscritoDTO;
 import com.example.demo.dtos.TorneoCreacionDTO;
 import com.example.demo.dtos.FlechaArqueroDTO;
+import com.example.demo.dtos.PuntajeRondaDTO;
 import com.example.demo.models.Torneo;
 import com.example.demo.services.TorneoService;
 import com.example.demo.services.FlechaService;
@@ -73,5 +74,11 @@ public class TorneoController {
     @GetMapping("/{idTorneo}/podio")
     public ResponseEntity<List<InscritoDTO>> obtenerPodio(@PathVariable Long idTorneo) {
         return ResponseEntity.ok(torneoService.obtenerPodio(idTorneo));
+    }
+
+    @PostMapping("/registrar-puntaje")
+    public ResponseEntity<String> registrarPuntajeRonda(@RequestBody PuntajeRondaDTO request) { // 2. Usar PuntajeRondaDTO
+        flechaService.registrarRondaCompletaDTO(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Puntaje registrado");
     }
 }

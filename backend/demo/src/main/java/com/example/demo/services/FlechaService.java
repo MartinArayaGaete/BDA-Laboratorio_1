@@ -1,11 +1,13 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.FlechaArqueroDTO;
+import com.example.demo.dtos.PuntajeRondaDTO;
 import com.example.demo.repositories.FlechaRepository;
 import com.example.demo.repositories.ParticipacionRepository;
 import com.example.demo.repositories.RondaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -42,4 +44,28 @@ public class FlechaService {
 
         flechaRepository.guardarRondaCompletaSP(idParticipacion, idRonda, flechas);
     }
+    @Transactional
+    public void registrarRondaCompletaDTO(PuntajeRondaDTO request) { // <--- 2. Cambiar tipo
+        // Validaciones
+        for (Integer puntaje : request.getFlechas()) {
+            if (puntaje < 0 || puntaje > 10) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Puntaje inválido");
+            }
+        }
+
+        // Llamada al repo (usando los getters del DTO)
+        flechaRepository.guardarRondaCompletaSP(
+            request.getIdParticipacion(), 
+            request.getIdRonda(), 
+            request.getFlechas()
+        );
+
+        registrarLogSistema(request);
+    }
+
+    private void registrarLogSistema(PuntajeRondaDTO request) { 
+        // Aquí usas request.getIdAdmin() cuando implementes el log
+        System.out.println("Log: El admin " + request.getIdAdmin() + " registró puntajes.");
+    }
+    
 }
