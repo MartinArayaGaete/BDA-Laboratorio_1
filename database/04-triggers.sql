@@ -1,3 +1,23 @@
+------------TRIGGER 1-----------------------
+
+CREATE OR REPLACE FUNCTION limites_puntaje_flecha_fn()
+RETURNS TRIGGER AS $$
+BEGIN
+
+  IF NEW.puntaje < 0 OR NEW.puntaje > 10 THEN
+    RAISE EXCEPTION 'Puntaje fuera de rango. Debe ser entre 0 y 10.';
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER limites_puntaje_flecha
+BEFORE INSERT OR UPDATE ON flecha
+FOR EACH ROW
+EXECUTE FUNCTION limites_puntaje_flecha_fn();
+
+
 ------------TRIGGER 2-----------------------
 CREATE OR REPLACE FUNCTION audit_puntaje_fn()
 RETURNS TRIGGER AS $$
