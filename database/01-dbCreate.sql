@@ -72,3 +72,10 @@ CREATE TABLE IF NOT EXISTS flecha (
     puntaje DECIMAL,
     FOREIGN KEY (id_puntaje_ronda) REFERENCES puntaje_ronda(id_puntaje_ronda) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_torneo_categoria
+ON torneo(id_categoria);
+CREATE INDEX idx_participacion_usuario
+ON participacion(id_usuario);
+CREATE INDEX idx_puntaje_ronda_participacion
+ON puntaje_ronda(id_participacion);
