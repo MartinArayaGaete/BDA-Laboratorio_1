@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.FlechaArqueroDTO;
+import com.example.demo.dtos.LeaderboardDTO;
 import com.example.demo.dtos.PuntajeRondaDTO;
 import com.example.demo.repositories.FlechaRepository;
 import com.example.demo.repositories.ParticipacionRepository;

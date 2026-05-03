@@ -1,10 +1,13 @@
 package com.example.demo.repositories;
 
 import com.example.demo.dtos.FlechaArqueroDTO;
+import com.example.demo.dtos.LeaderboardDTO;
 import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.jdbc.core.CallableStatementCreator;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import java.lang.Long;
+import java.lang.String;
 
 import java.sql.CallableStatement;
 import java.util.List;
@@ -111,7 +114,7 @@ public class FlechaRepository {
             new LeaderboardDTO(
                 rs.getLong("id_usuario"),
                 rs.getString("nombre"),
-                rs.getDouble("promedio_puntos_flecha")
+                rs.getDouble("promedio_puntos_flecha"),
                 rs.getInt("posicion")
             )
         );

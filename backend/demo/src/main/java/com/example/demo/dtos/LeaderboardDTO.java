@@ -6,11 +6,11 @@ public class LeaderboardDTO {
     private Double promedioPuntosFlecha;
     private Integer posicion;
 
-    public LeaderboardDTO(Long idUsuario, String nombre, Double promedioPuntosFlecha) {
+    public LeaderboardDTO(Long idUsuario, String nombre, Double promedioPuntosFlecha, int posicion) {
         this.idUsuario = idUsuario;
         this.nombre = nombre;
         this.promedioPuntosFlecha = promedioPuntosFlecha;
-        this.posicion = posicion; 
+        this.posicion = this.posicion;
     }
 
     public Long getIdUsuario() { return idUsuario; }
