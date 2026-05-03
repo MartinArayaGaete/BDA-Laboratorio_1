@@ -40,6 +40,41 @@ public class TorneoRepository {
         return jdbcTemplate.query("SELECT * FROM torneo", (rs, rowNum) -> mapRowToTorneo(rs));
     }
 
+    public Long contarTorneos() {
+        String sql = "SELECT COUNT(*) FROM torneo";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count != null ? count : 0;
+    }
+
+    public Long contarTorneosPorEstado(String estadoTorneo) {
+        String sql = "SELECT COUNT(*) FROM torneo WHERE estado_torneo = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, estadoTorneo);
+        return count != null ? count : 0;
+    }
+
+    public List<Map<String, Object>> obtenerTorneosPaginados(int page, int size) {
+        String sql = """
+            SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino
+            FROM torneo
+            ORDER BY fecha_inicio DESC, id_torneo DESC
+            LIMIT ? OFFSET ?
+            """;
+        int offset = page * size;
+        return jdbcTemplate.queryForList(sql, size, offset);
+    }
+
+    public List<Map<String, Object>> obtenerTorneosPorEstadoPaginados(String estadoTorneo, int page, int size) {
+        String sql = """
+            SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino
+            FROM torneo
+            WHERE estado_torneo = ?
+            ORDER BY fecha_inicio DESC, id_torneo DESC
+            LIMIT ? OFFSET ?
+            """;
+        int offset = page * size;
+        return jdbcTemplate.queryForList(sql, estadoTorneo, size, offset);
+    }
+
     public Optional<Torneo> buscarPorId(Long idTorneo) {
         try { return Optional.ofNullable(jdbcTemplate.queryForObject("SELECT * FROM torneo WHERE id_torneo = ?", (rs, rowNum) -> mapRowToTorneo(rs), idTorneo)); } catch (EmptyResultDataAccessException e) { return Optional.empty(); }
     }

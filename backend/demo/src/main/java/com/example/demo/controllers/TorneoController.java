@@ -44,6 +44,29 @@ public class TorneoController {
         return ResponseEntity.ok(torneoService.obtenerTodos());
     }
 
+    /**
+     * Obtiene torneos paginados.
+     * GET /api/torneos/paginados?page=0&size=6
+     */
+    @GetMapping("/paginados")
+    public ResponseEntity<com.example.demo.dtos.TorneosPaginadosResponse> obtenerTorneosPaginados(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+        return ResponseEntity.ok(torneoService.obtenerTorneosPaginados(page, size));
+    }
+
+    /**
+     * Obtiene torneos paginados filtrando por estado.
+     * GET /api/torneos/paginados/estado/ON_COURSE?page=0&size=6
+     */
+    @GetMapping("/paginados/estado/{estado}")
+    public ResponseEntity<com.example.demo.dtos.TorneosPaginadosResponse> obtenerTorneosPorEstadoPaginados(
+            @PathVariable String estado,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+        return ResponseEntity.ok(torneoService.obtenerTorneosPorEstadoPaginados(estado, page, size));
+    }
+
     @PostMapping
     public ResponseEntity<String> crearTorneo(@RequestBody TorneoCreacionDTO dto) {
         torneoService.crearTorneo(dto);
