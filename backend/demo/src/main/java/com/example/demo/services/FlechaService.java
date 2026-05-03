@@ -72,4 +72,9 @@ public class FlechaService {
     private void registrarLogSistema(PuntajeRondaDTO request) {
         System.out.println("Log: El admin " + request.getIdAdmin() + " registró puntajes.");
     }
+
+    // Método para pasar los datos al controlador
+    public List<LeaderboardDTO> obtenerLeaderboard() {
+        return flechaRepository.obtenerLeaderboardHistorico();
+    }
 }

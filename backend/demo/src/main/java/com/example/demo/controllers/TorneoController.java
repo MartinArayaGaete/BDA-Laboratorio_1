@@ -180,4 +180,13 @@ public class TorneoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    /**
+     * Obtiene el leaderboard histórico de arqueros basado en su promedio de puntos por flecha.
+     * GET /api/torneos/leaderboard
+     */
+    @GetMapping("/leaderboard")
+    public ResponseEntity<List<com.example.demo.dtos.LeaderboardDTO>> obtenerLeaderboard() {
+        return ResponseEntity.ok(flechaService.obtenerLeaderboard());
+    }
 }
