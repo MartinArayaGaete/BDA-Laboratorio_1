@@ -112,6 +112,7 @@ public class FlechaRepository {
                 rs.getLong("id_usuario"),
                 rs.getString("nombre"),
                 rs.getDouble("promedio_puntos_flecha")
+                rs.getInt("posicion")
             )
         );
     }
