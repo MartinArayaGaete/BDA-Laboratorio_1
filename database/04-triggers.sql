@@ -22,13 +22,13 @@ EXECUTE FUNCTION limites_puntaje_flecha_fn();
 CREATE OR REPLACE FUNCTION audit_puntaje_fn()
 RETURNS TRIGGER AS $$
 DECLARE
-    admin_id INTEGER;
-    ronda_id INTEGER;
+    admin_id BIGINT;
+    ronda_id BIGINT;
 BEGIN
   IF OLD.puntaje_final <> NEW.puntaje_final THEN
 
-    admin_id := current_setting('my.user_id', true)::INTEGER;
-    ronda_id := current_setting('my.ronda_id', true)::INTEGER;
+    admin_id := current_setting('my.user_id', true)::BIGINT;
+    ronda_id := current_setting('my.ronda_id', true)::BIGINT;
 
     INSERT INTO logs (
         id_admin,
