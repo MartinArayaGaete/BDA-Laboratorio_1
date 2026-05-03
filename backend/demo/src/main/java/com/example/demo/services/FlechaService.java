@@ -29,6 +29,10 @@ public class FlechaService {
         return flechaRepository.obtenerFlechasDeArqueroEnTorneo(idUsuario, idTorneo);
     }
 
+    public List<FlechaArqueroDTO> obtenerFlechasArqueroEnRonda(Long idUsuario, Long idTorneo, Integer numeroRonda) {
+        return flechaRepository.obtenerFlechasDeArqueroEnRonda(idUsuario, idTorneo, numeroRonda);
+    }
+
     public void registrarRondaCompleta(Long idTorneo, Long idUsuario, Integer numeroRonda, List<Integer> flechas, Long idAdmin) {
         for (Integer puntaje : flechas) {
             if (puntaje < 0 || puntaje > 10) {

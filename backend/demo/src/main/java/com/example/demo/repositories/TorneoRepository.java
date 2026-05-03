@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 @Repository
 public class TorneoRepository {
@@ -81,5 +82,39 @@ public class TorneoRepository {
         String sql = "UPDATE torneo SET estado_torneo = 'IN_COURSE' WHERE id_torneo = ? AND estado_torneo = 'NOT_STARTED'";
         // Retorna el número de filas afectadas. Si es 0, significa que el torneo no existía o ya había empezado.
         return jdbcTemplate.update(sql, idTorneo);
+    }
+    /**
+     * Cuenta la cantidad total de torneos disponibles para un usuario.
+     * Torneos disponibles = estado NOT_STARTED y usuario NO está inscrito.
+     */
+    public Long contarTorneosDisponibles(Long idUsuario) {
+        String sql = """
+            SELECT COUNT(DISTINCT t.id_torneo) as total
+            FROM torneo t
+            LEFT JOIN participacion p ON t.id_torneo = p.id_torneo AND p.id_usuario = ?
+            WHERE t.estado_torneo = 'NOT_STARTED' AND p.id_participacion IS NULL
+            """;
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, idUsuario);
+        return count != null ? count : 0;
+    }
+
+    /**
+     * Obtiene torneos disponibles de forma paginada para un usuario.
+     * Retorna Map con keys: id_torneo, nombre_torneo, estado_torneo, 
+     * fecha_inicio, fecha_termino, id_categoria, nombre_categoria
+     */
+    public List<Map<String, Object>> obtenerTorneosDisponiblesPaginados(Long idUsuario, int page, int size) {
+        String sql = """
+            SELECT DISTINCT t.id_torneo, t.nombre_torneo, t.estado_torneo, 
+                   t.fecha_inicio, t.fecha_termino, t.id_categoria, c.nombre_categoria
+            FROM torneo t
+            LEFT JOIN participacion p ON t.id_torneo = p.id_torneo AND p.id_usuario = ?
+            LEFT JOIN categoria c ON t.id_categoria = c.id_categoria
+            WHERE t.estado_torneo = 'NOT_STARTED' AND p.id_participacion IS NULL
+            ORDER BY t.fecha_inicio ASC
+            LIMIT ? OFFSET ?
+            """;
+        int offset = page * size;
+        return jdbcTemplate.queryForList(sql, idUsuario, size, offset);
     }
 }

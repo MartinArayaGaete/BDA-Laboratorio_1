@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.CallableStatement;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class FlechaRepository {
@@ -38,6 +39,26 @@ public class FlechaRepository {
         }, idUsuario, idTorneo);
     }
 
+    public List<FlechaArqueroDTO> obtenerFlechasDeArqueroEnRonda(Long idUsuario, Long idTorneo, Integer numeroRonda) {
+        String sql = """
+                SELECT r.numero_ronda, f.id_flecha, f.puntaje
+                FROM flecha f
+                INNER JOIN puntaje_ronda pr ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+                INNER JOIN participacion p ON pr.id_participacion = p.id_participacion
+                INNER JOIN ronda r ON pr.id_ronda = r.id_ronda
+                WHERE p.id_usuario = ? AND p.id_torneo = ? AND r.numero_ronda = ?
+                ORDER BY f.id_flecha ASC
+                """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            FlechaArqueroDTO dto = new FlechaArqueroDTO();
+            dto.setNumeroRonda(rs.getInt("numero_ronda"));
+            dto.setIdFlecha(rs.getLong("id_flecha"));
+            dto.setPuntaje(rs.getInt("puntaje"));
+            return dto;
+        }, idUsuario, idTorneo, numeroRonda);
+    }
+
     public void guardarFlecha(Long idParticipacion, Long idRonda, Integer puntaje) {
         String sql = "INSERT INTO flecha (id_puntaje_ronda, puntaje) VALUES ((SELECT id_puntaje_ronda FROM" +
                 " puntaje_ronda WHERE id_participacion = ? AND id_ronda = ?), ?)";
@@ -62,5 +83,20 @@ public class FlechaRepository {
                     return null;
                 }
         );
+    }
+
+    /**
+     * Obtiene todas las flechas de un participante en una ronda específica.
+     * Retorna Map con keys: id_flecha, puntaje
+     */
+    public List<Map<String, Object>> obtenerFlechasPorRonda(Long idParticipacion, Long idRonda) {
+        String sql = """
+            SELECT f.id_flecha, f.puntaje
+            FROM flecha f
+            INNER JOIN puntaje_ronda pr ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+            WHERE pr.id_participacion = ? AND pr.id_ronda = ?
+            ORDER BY f.id_flecha ASC
+            """;
+        return jdbcTemplate.queryForList(sql, idParticipacion, idRonda);
     }
 }

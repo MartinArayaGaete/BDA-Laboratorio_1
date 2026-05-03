@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.InscritoDTO;
+import com.example.demo.dtos.ResumenTorneoArqueroDTO;
 import com.example.demo.models.Torneo;
 import com.example.demo.repositories.ParticipacionRepository;
 import com.example.demo.repositories.TorneoRepository;
@@ -60,4 +61,38 @@ public class ParticipacionService {
     public List<Map<String, Object>> obtenerTodas() {
         return participacionRepository.obtenerTodas();
     }
+
+        public ResumenTorneoArqueroDTO obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
+        Map<String, Object> resumen = participacionRepository.obtenerResumenPorTorneoYUsuario(idTorneo, idUsuario)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "No se encontró participación para el usuario en este torneo."));
+
+        Integer puntajeFinal = resumen.get("puntaje_final") == null
+            ? 0
+            : ((Number) resumen.get("puntaje_final")).intValue();
+
+        Integer posicionFinal = resumen.get("posicion_final") == null
+            ? null
+            : ((Number) resumen.get("posicion_final")).intValue();
+
+        Integer totalFlechas = resumen.get("total_flechas") == null
+            ? 0
+            : ((Number) resumen.get("total_flechas")).intValue();
+
+        Double promedioPuntos = resumen.get("promedio_puntos") == null
+            ? 0.0
+            : ((Number) resumen.get("promedio_puntos")).doubleValue();
+
+        Integer rondasJugadas = resumen.get("rondas_jugadas") == null
+            ? 0
+            : ((Number) resumen.get("rondas_jugadas")).intValue();
+
+        return new ResumenTorneoArqueroDTO(
+            puntajeFinal,
+            posicionFinal,
+            totalFlechas,
+            promedioPuntos,
+            rondasJugadas
+        );
+        }
 }

@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -71,5 +72,21 @@ public class RondaRepository {
             r.setNumeroRonda(rs.getInt("numero_ronda"));
             return r;
         });
+    }
+
+    /**
+     * Obtiene todas las rondas con sus puntajes para una participación en un torneo específico.
+     * Retorna Map con keys: id_ronda, numero_ronda, puntaje_ronda
+     */
+    public List<Map<String, Object>> obtenerRondasConPuntajesPorParticipacion(Long idParticipacion, Long idTorneo) {
+        String sql = """
+            SELECT r.id_ronda, r.numero_ronda, COALESCE(pr.puntaje_ronda, 0) as puntaje_ronda
+            FROM ronda r
+            LEFT JOIN puntaje_ronda pr ON r.id_ronda = pr.id_ronda 
+                AND pr.id_participacion = ?
+            WHERE r.id_torneo = ?
+            ORDER BY r.numero_ronda ASC
+            """;
+        return jdbcTemplate.queryForList(sql, idParticipacion, idTorneo);
     }
 }

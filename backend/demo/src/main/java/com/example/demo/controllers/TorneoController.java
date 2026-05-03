@@ -4,9 +4,13 @@ import com.example.demo.dtos.InscritoDTO;
 import com.example.demo.dtos.TorneoCreacionDTO;
 import com.example.demo.dtos.FlechaArqueroDTO;
 import com.example.demo.dtos.PuntajeRondaDTO;
+import com.example.demo.dtos.ResumenTorneoArqueroDTO;
 import com.example.demo.models.Torneo;
 import com.example.demo.services.TorneoService;
 import com.example.demo.services.FlechaService;
+import com.example.demo.services.TorneosDisponiblesService;
+import com.example.demo.services.ParticipacionService;
+import com.example.demo.dtos.TorneosDisponiblesResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +26,17 @@ public class TorneoController {
 
     private final TorneoService torneoService;
     private final FlechaService flechaService;
+    private final TorneosDisponiblesService torneosDisponiblesService;
+    private final ParticipacionService participacionService;
 
-    public TorneoController(TorneoService torneoService, FlechaService flechaService) {
+    public TorneoController(TorneoService torneoService,
+                            FlechaService flechaService,
+                            TorneosDisponiblesService torneosDisponiblesService,
+                            ParticipacionService participacionService) {
         this.torneoService = torneoService;
         this.flechaService = flechaService;
+        this.torneosDisponiblesService = torneosDisponiblesService;
+        this.participacionService = participacionService;
     }
 
     @GetMapping
@@ -42,6 +53,29 @@ public class TorneoController {
     @GetMapping("/{idTorneo}/arqueros/{idUsuario}/flechas")
     public ResponseEntity<List<FlechaArqueroDTO>> verFlechasDeArquero(@PathVariable Long idTorneo, @PathVariable Long idUsuario) {
         return ResponseEntity.ok(flechaService.obtenerFlechasArquero(idUsuario, idTorneo));
+    }
+
+    /**
+     * Obtiene las flechas de un arquero en una ronda específica de un torneo.
+     * GET /api/torneos/{idTorneo}/rondas/{numeroRonda}/arqueros/{idUsuario}/flechas
+     */
+    @GetMapping("/{idTorneo}/rondas/{numeroRonda}/arqueros/{idUsuario}/flechas")
+    public ResponseEntity<List<FlechaArqueroDTO>> verFlechasDeArqueroPorRonda(
+            @PathVariable Long idTorneo,
+            @PathVariable Integer numeroRonda,
+            @PathVariable Long idUsuario) {
+        return ResponseEntity.ok(flechaService.obtenerFlechasArqueroEnRonda(idUsuario, idTorneo, numeroRonda));
+    }
+
+    /**
+     * Obtiene un resumen de rendimiento del arquero en un torneo.
+     * GET /api/torneos/{idTorneo}/arqueros/{idUsuario}/resumen
+     */
+    @GetMapping("/{idTorneo}/arqueros/{idUsuario}/resumen")
+    public ResponseEntity<ResumenTorneoArqueroDTO> obtenerResumenArqueroEnTorneo(
+            @PathVariable Long idTorneo,
+            @PathVariable Long idUsuario) {
+        return ResponseEntity.ok(participacionService.obtenerResumenPorTorneoYUsuario(idTorneo, idUsuario));
     }
 
     @PostMapping("/{idTorneo}/rondas/{numeroRonda}")
@@ -101,6 +135,26 @@ public class TorneoController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error interno al iniciar el torneo.");
+        }
+    }
+
+    /**
+     * Obtiene torneos disponibles de forma paginada para un usuario.
+     * Los torneos disponibles son aquellos en estado NOT_STARTED donde el usuario no está inscrito.
+     * GET /api/torneos/disponibles?idUsuario=1&page=0&size=6
+     */
+    @GetMapping("/disponibles")
+    public ResponseEntity<TorneosDisponiblesResponse> obtenerTorneosDisponibles(
+            @RequestParam Long idUsuario,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+        try {
+            TorneosDisponiblesResponse respuesta = torneosDisponiblesService.obtenerTorneosDisponibles(idUsuario, page, size);
+            return ResponseEntity.ok(respuesta);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

@@ -98,4 +98,57 @@ public class ParticipacionRepository {
             """;
         return jdbcTemplate.queryForList(sql);
     }
+
+    /**
+     * Obtiene el total de participaciones de un usuario.
+     */
+    public Long contarParticipacionesPorUsuario(Long idUsuario) {
+        String sql = "SELECT COUNT(*) FROM participacion WHERE id_usuario = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, idUsuario);
+        return count != null ? count : 0;
+    }
+
+    /**
+     * Obtiene participaciones paginadas de un usuario, unidas con datos del torneo.
+     * Retorna Map con keys: id_participacion, id_torneo, nombre_torneo, puntaje_final, 
+     * posicion_final, fecha_inicio, estado_torneo
+     */
+    public List<Map<String, Object>> obtenerHistorialPaginado(Long idUsuario, int page, int size) {
+        String sql = """
+            SELECT p.id_participacion, p.id_torneo, t.nombre_torneo, p.puntaje_final, 
+                   p.posicion_final, t.fecha_inicio, t.estado_torneo
+            FROM participacion p
+            INNER JOIN torneo t ON p.id_torneo = t.id_torneo
+            WHERE p.id_usuario = ?
+            ORDER BY t.fecha_inicio DESC
+            LIMIT ? OFFSET ?
+            """;
+        int offset = page * size;
+        return jdbcTemplate.queryForList(sql, idUsuario, size, offset);
+    }
+
+    /**
+     * Obtiene un resumen agregado por torneo y arquero en una sola consulta.
+     * Retorna keys: puntaje_final, posicion_final, total_flechas, promedio_puntos, rondas_jugadas
+     */
+    public Optional<Map<String, Object>> obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
+        String sql = """
+            SELECT p.puntaje_final,
+                   p.posicion_final,
+                   COUNT(f.id_flecha) AS total_flechas,
+                   COALESCE(ROUND(AVG(f.puntaje)::numeric, 2), 0) AS promedio_puntos,
+                   COUNT(DISTINCT pr.id_ronda) AS rondas_jugadas
+            FROM participacion p
+            LEFT JOIN puntaje_ronda pr ON pr.id_participacion = p.id_participacion
+            LEFT JOIN flecha f ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+            WHERE p.id_torneo = ? AND p.id_usuario = ?
+            GROUP BY p.id_participacion, p.puntaje_final, p.posicion_final
+            """;
+
+        List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, idTorneo, idUsuario);
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.get(0));
+    }
 }
