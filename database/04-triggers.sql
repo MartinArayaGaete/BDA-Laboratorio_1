@@ -25,10 +25,18 @@ DECLARE
     admin_id BIGINT;
     ronda_id BIGINT;
 BEGIN
-  IF OLD.puntaje_final <> NEW.puntaje_final THEN
+  IF OLD.puntaje_final IS DISTINCT FROM NEW.puntaje_final THEN
 
-    admin_id := current_setting('my.user_id', true)::BIGINT;
-    ronda_id := current_setting('my.ronda_id', true)::BIGINT;
+    admin_id := NULLIF(current_setting('my.user_id', true), '')::BIGINT;
+    ronda_id := NULLIF(current_setting('my.ronda_id', true), '')::BIGINT;
+
+    IF admin_id IS NULL THEN
+      RAISE EXCEPTION 'No se configuró my.user_id para auditoría.';
+    END IF;
+
+    IF ronda_id IS NULL THEN
+      RAISE EXCEPTION 'No se configuró my.ronda_id para auditoría.';
+    END IF;
 
     INSERT INTO logs (
         id_admin,
@@ -36,8 +44,7 @@ BEGIN
         torneo_afectado,
         ronda_afectada,
         puntaje_anterior,
-        puntaje_nuevo,
-        fecha_editado
+        puntaje_nuevo
     )
     VALUES (
         admin_id,
@@ -45,8 +52,7 @@ BEGIN
         OLD.id_torneo,
         ronda_id,
         OLD.puntaje_final,
-        NEW.puntaje_final,
-        CURRENT_TIMESTAMP
+        NEW.puntaje_final
     );
 
   END IF;
@@ -56,31 +62,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER audit_puntaje
-AFTER UPDATE ON participacion
+AFTER UPDATE OF puntaje_final ON participacion
 FOR EACH ROW
 EXECUTE FUNCTION audit_puntaje_fn();
-
-
-
-------------TRIGGER 3-----------------------
--- Ejecutar procedimiento para calcular posiciones al completar ronda
-CREATE OR REPLACE FUNCTION actualizar_posiciones_al_completar_torneo()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF OLD.estado_torneo = 'IN_COURSE'AND NEW.estado_torneo = 'COMPLETED' THEN
-    CALL actualizar_posiciones(NEW.id_torneo);
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER trg_actualizar_posiciones_al_completar
-BEFORE UPDATE OF estado_torneo ON torneo
-FOR EACH ROW
-WHEN (
-  OLD.estado_torneo = 'IN_COURSE'
-  AND NEW.estado_torneo = 'COMPLETED'
-)
-EXECUTE FUNCTION actualizar_posiciones_al_completar_torneo();
