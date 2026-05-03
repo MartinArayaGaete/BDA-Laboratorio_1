@@ -11,10 +11,19 @@ function ArcherDashboard() {
   const [torneos, setTorneos] = useState([]);
   const [torneosCargando, setTorneosCargando] = useState(true);
   const [torneosPage, setTorneosPage] = useState(0);
+  const [torneosTotalPages, setTorneosTotalPages] = useState(0);
   const [historial, setHistorial] = useState([]);
   const [historialCargando, setHistorialCargando] = useState(true);
   const [historialPage, setHistorialPage] = useState(0);
+  const [historialTotalPages, setHistorialTotalPages] = useState(0);
   const [todasLasFlechas, setTodasLasFlechas] = useState([]);
+  const [flechasPorTorneo, setFlechasPorTorneo] = useState({});
+  const [errorCarga, setErrorCarga] = useState("");
+
+  const esErrorAuth = (err) => {
+    const status = err?.response?.status;
+    return status === 401 || status === 403;
+  };
 
   useEffect(() => {
     const usuarioGuardado = localStorage.getItem("usuarioLogueado");
@@ -35,107 +44,235 @@ function ArcherDashboard() {
     if (!usuario) return;
 
     const fetchTorneos = async () => {
+      const fetchTorneosLegacy = async () => {
+        const respAll = await api.get("/torneos");
+        const todos = Array.isArray(respAll.data) ? respAll.data : [];
+        const estadosDisponibles = new Set(["NOT_STARTED", "CREADO", "OPEN", "PENDING"]);
+
+        const candidatos = todos.filter((t) =>
+          estadosDisponibles.has((t?.estadoTorneo || "").toUpperCase())
+        );
+
+        const filtrados = [];
+        for (const torneo of candidatos) {
+          try {
+            const inscritosResp = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
+            const inscritos = Array.isArray(inscritosResp.data) ? inscritosResp.data : [];
+            const yaInscrito = inscritos.some((i) => i.idUsuario === usuario.idUsuario);
+            if (!yaInscrito) filtrados.push(torneo);
+          } catch (errorInscritos) {
+            filtrados.push(torneo);
+          }
+        }
+
+        const totalPages = Math.ceil(filtrados.length / PAGE_SIZE);
+        const inicio = torneosPage * PAGE_SIZE;
+        const pagina = filtrados.slice(inicio, inicio + PAGE_SIZE);
+        setTorneos(pagina);
+        setTorneosTotalPages(totalPages);
+      };
+
       try {
         setTorneosCargando(true);
-        const resp = await api.get("/torneos");
-        setTorneos(resp.data || []);
+        setErrorCarga("");
+        const resp = await api.get("/torneos/disponibles", {
+          params: {
+            idUsuario: usuario.idUsuario,
+            page: torneosPage,
+            size: PAGE_SIZE,
+          },
+        });
+
+        const payload = resp.data || {};
+        let disponibles = Array.isArray(payload.content) ? payload.content : [];
+        let totalPages = Number(payload.totalPages || 0);
+
+        // Fallback: algunos seeds usan estado CREADO y no NOT_STARTED.
+        if (disponibles.length === 0 && torneosPage === 0) {
+          await fetchTorneosLegacy();
+          return;
+        }
+
+        setTorneos(disponibles);
+        setTorneosTotalPages(totalPages);
       } catch (err) {
+        if (esErrorAuth(err)) {
+          try {
+            await fetchTorneosLegacy();
+            return;
+          } catch (legacyErr) {
+            setErrorCarga("Tu sesión no está autorizada para consultar torneos. Vuelve a iniciar sesión.");
+            setTorneos([]);
+            setTorneosTotalPages(0);
+            return;
+          }
+        }
+        if (err?.response?.status === 400 && torneosPage > 0) {
+          setTorneosPage(0);
+          return;
+        }
         console.error("Error traer torneos:", err);
+        setErrorCarga("No se pudieron cargar los torneos. Revisa tu sesión o backend.");
+        setTorneos([]);
+        setTorneosTotalPages(0);
       } finally {
         setTorneosCargando(false);
       }
     };
 
     fetchTorneos();
-  }, [usuario]);
+  }, [usuario, torneosPage]);
 
   useEffect(() => {
     if (!usuario) return;
+
     const fetchHistorialReal = async () => {
-      try {
-        setHistorialCargando(true);
+      const fetchHistorialLegacy = async () => {
         const allTorneos = await api.get("/torneos");
-        const torneosList = allTorneos.data || [];
+        const torneosList = Array.isArray(allTorneos.data) ? allTorneos.data : [];
         const participacionesDelUsuario = [];
-        const flechas = [];
+        const flechasTodas = [];
+        const flechasPorTorneoLocal = {};
 
         for (const torneo of torneosList) {
           try {
-            const inscritos = await api.get(`/torneos/${torneo.idTorneo}/inscritos`);
-            const inscritosDelTorneo = inscritos.data || [];
+            const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
+            const inscritosDelTorneo = Array.isArray(inscritos.data) ? inscritos.data : [];
             const estaInscrito = inscritosDelTorneo.some(
               (inscrito) => inscrito.idUsuario === usuario.idUsuario
             );
 
-            if (estaInscrito) {
-              const participacion = {
-                idTorneo: torneo.idTorneo,
-                nombreTorneo: torneo.nombreTorneo,
-                puntajeFinal: 0,
-                posicionFinal: "-",
-                fechaInicio: torneo.fechaInicio,
-              };
+            if (!estaInscrito) continue;
 
-              const rankingDelTorneo = [];
-              for (const inscrito of inscritosDelTorneo) {
-                try {
-                  const flechasDelInscrito = await api.get(
-                    `/torneos/${torneo.idTorneo}/arqueros/${inscrito.idUsuario}/flechas`
-                  );
-                  const puntajeDelInscrito = (flechasDelInscrito.data || []).reduce(
-                    (sum, flecha) => sum + (flecha.puntaje || 0),
-                    0
-                  );
-                  rankingDelTorneo.push({
-                    idUsuario: inscrito.idUsuario,
-                    puntaje: puntajeDelInscrito,
-                  });
-                } catch (err) {
-                  rankingDelTorneo.push({
-                    idUsuario: inscrito.idUsuario,
-                    puntaje: 0,
-                  });
-                }
-              }
+            let puntajeFinal = 0;
+            let posicionFinal = "-";
+            let flechasDelTorneo = [];
 
-              rankingDelTorneo.sort((a, b) => b.puntaje - a.puntaje);
-              const posicionUsuario =
-                rankingDelTorneo.findIndex((item) => item.idUsuario === usuario.idUsuario) + 1;
+            try {
+              const flechasResp = await api.get(
+                `/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`
+              );
+              flechasDelTorneo = Array.isArray(flechasResp.data) ? flechasResp.data : [];
+              puntajeFinal = flechasDelTorneo.reduce((sum, flecha) => sum + (flecha.puntaje || 0), 0);
+              flechasTodas.push(...flechasDelTorneo);
+              flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
+            } catch (errorFlechas) {
+              flechasPorTorneoLocal[torneo.idTorneo] = [];
+            }
 
+            const rankingDelTorneo = [];
+            for (const inscrito of inscritosDelTorneo) {
               try {
-                const resp = await api.get(
-                  `/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`
+                const flechasDelInscrito = await api.get(
+                  `/torneos/${torneo.idTorneo}/arqueros/${inscrito.idUsuario}/flechas`
                 );
-                const flechasDelTorneo = resp.data || [];
-                participacion.puntajeFinal = flechasDelTorneo.reduce(
+                const puntajeDelInscrito = (flechasDelInscrito.data || []).reduce(
                   (sum, flecha) => sum + (flecha.puntaje || 0),
                   0
                 );
-                flechas.push(...flechasDelTorneo);
-                participacion.posicionFinal = posicionUsuario > 0 ? posicionUsuario : "-";
-              } catch (err) {
-                console.warn(`No hay flechas para torneo ${torneo.idTorneo}`);
-                participacion.posicionFinal = posicionUsuario > 0 ? posicionUsuario : "-";
+                rankingDelTorneo.push({ idUsuario: inscrito.idUsuario, puntaje: puntajeDelInscrito });
+              } catch (errorRanking) {
+                rankingDelTorneo.push({ idUsuario: inscrito.idUsuario, puntaje: 0 });
               }
-
-              participacionesDelUsuario.push(participacion);
             }
-          } catch (err) {
-            console.warn(`No se pudo verificar inscritos para torneo ${torneo.idTorneo}`);
+
+            rankingDelTorneo.sort((a, b) => b.puntaje - a.puntaje);
+            const posicionUsuario =
+              rankingDelTorneo.findIndex((item) => item.idUsuario === usuario.idUsuario) + 1;
+            posicionFinal = posicionUsuario > 0 ? posicionUsuario : "-";
+
+            participacionesDelUsuario.push({
+              idTorneo: torneo.idTorneo,
+              nombreTorneo: torneo.nombreTorneo,
+              puntajeFinal,
+              posicionFinal,
+              fechaInicio: torneo.fechaInicio,
+              estadoTorneo: torneo.estadoTorneo,
+              rondas: [],
+            });
+          } catch (errorInscritos) {
+            // Ignorar torneos que no se puedan consultar
           }
         }
 
-        setHistorial(participacionesDelUsuario);
+        const totalPages = Math.ceil(participacionesDelUsuario.length / PAGE_SIZE);
+        const inicio = historialPage * PAGE_SIZE;
+        const pagina = participacionesDelUsuario.slice(inicio, inicio + PAGE_SIZE);
+
+        setHistorial(pagina);
+        setHistorialTotalPages(totalPages);
+        setTodasLasFlechas(flechasTodas);
+        setFlechasPorTorneo(flechasPorTorneoLocal);
+      };
+
+      try {
+        setHistorialCargando(true);
+        setErrorCarga("");
+        const resp = await api.get(`/arqueros/${usuario.idUsuario}/historial`, {
+          params: {
+            page: historialPage,
+            size: PAGE_SIZE,
+          },
+        });
+
+        const payload = resp.data || {};
+        const torneosHistorial = Array.isArray(payload.torneos) ? payload.torneos : [];
+
+        const flechasPorTorneoLocal = {};
+        const flechas = [];
+
+        torneosHistorial.forEach((torneo) => {
+          const rondas = Array.isArray(torneo.rondas) ? torneo.rondas : [];
+          const flechasDelTorneo = [];
+
+          rondas.forEach((ronda) => {
+            const numeroRonda = ronda?.numeroRonda;
+            const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
+
+            flechasRonda.forEach((flecha) => {
+              const flechaConRonda = {
+                ...flecha,
+                numeroRonda,
+              };
+              flechasDelTorneo.push(flechaConRonda);
+              flechas.push(flechaConRonda);
+            });
+          });
+
+          flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
+        });
+
+        setHistorial(torneosHistorial);
+        setHistorialTotalPages(Number(payload.totalPages || 0));
         setTodasLasFlechas(flechas);
+        setFlechasPorTorneo(flechasPorTorneoLocal);
       } catch (err) {
+        if (esErrorAuth(err)) {
+          try {
+            await fetchHistorialLegacy();
+            return;
+          } catch (legacyErr) {
+            setErrorCarga("Tu sesión no está autorizada para consultar historial. Vuelve a iniciar sesión.");
+            setHistorial([]);
+            setHistorialTotalPages(0);
+            setTodasLasFlechas([]);
+            setFlechasPorTorneo({});
+            return;
+          }
+        }
         console.error("Error traer historial:", err);
+        setErrorCarga("No se pudo cargar el historial. Revisa tu sesión o backend.");
+        setHistorial([]);
+        setHistorialTotalPages(0);
+        setTodasLasFlechas([]);
+        setFlechasPorTorneo({});
       } finally {
         setHistorialCargando(false);
       }
     };
 
     fetchHistorialReal();
-  }, [usuario]);
+  }, [usuario, historialPage]);
 
   const calcularEstadisticas = () => {
     const totalFlechas = todasLasFlechas.length;
@@ -163,20 +300,9 @@ function ArcherDashboard() {
   const porcentajeAcierto =
     stats.totalFlechas > 0 ? Math.round((stats.flechasAcertadas / stats.totalFlechas) * 100) : 0;
 
-  const torneosDisponibles = torneosArray.filter(
-    (t) => (t.estadoTorneo || "").toUpperCase() === "NOT_STARTED"
-  );
-  const torneosPaginados = torneosDisponibles.slice(
-    torneosPage * PAGE_SIZE,
-    (torneosPage + 1) * PAGE_SIZE
-  );
-  const torneosTotalPages = Math.ceil(torneosDisponibles.length / PAGE_SIZE);
-
-  const historialPaginado = historialArray.slice(
-    historialPage * PAGE_SIZE,
-    (historialPage + 1) * PAGE_SIZE
-  );
-  const historialTotalPages = Math.ceil(historialArray.length / PAGE_SIZE);
+  const torneosDisponibles = torneosArray;
+  const torneosPaginados = torneosDisponibles;
+  const historialPaginado = historialArray;
 
   const renderPieGrafico = () => {
     const acertadas = stats.flechasAcertadas;
@@ -220,6 +346,7 @@ function ArcherDashboard() {
     <div className="container-fluid py-4 px-4">
       <h1>Mi Perfil de Arquero</h1>
       {usuario && <p className="text-muted">{usuario.nombre} (ID: {usuario.idUsuario})</p>}
+      {errorCarga && <div className="alert alert-danger">{errorCarga}</div>}
 
       <section className="mb-5">
         <h5 className="mb-3">Mis Estadísticas</h5>
@@ -317,6 +444,36 @@ function ArcherDashboard() {
                     <p className="mb-0">
                       Posición: <strong>{item.posicionFinal}°</strong>
                     </p>
+                      <details className="mt-2">
+                        <summary className="small" style={{ cursor: "pointer" }}>
+                          Ver flechas ({(flechasPorTorneo[item.idTorneo] || []).length})
+                        </summary>
+                        <div className="mt-2 small">
+                          {(() => {
+                            const flechasFor = flechasPorTorneo[item.idTorneo] || [];
+                            if (flechasFor.length === 0) return <div className="text-muted">Sin flechas registradas</div>;
+                            const agrupadas = flechasFor.reduce((acc, f) => {
+                              const r = f.numeroRonda || 0;
+                              if (!acc[r]) acc[r] = [];
+                              acc[r].push(f);
+                              return acc;
+                            }, {});
+
+                            return Object.keys(agrupadas)
+                              .sort((a, b) => Number(a) - Number(b))
+                              .map((r) => (
+                                <div key={r} className="mb-2">
+                                  <strong>Ronda {r}</strong>
+                                  <ul className="mb-0">
+                                    {agrupadas[r].map((f) => (
+                                      <li key={f.idFlecha}>Flecha {f.idFlecha}: {f.puntaje}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ));
+                          })()}
+                        </div>
+                      </details>
                   </div>
                 </div>
               ))}
