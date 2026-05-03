@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS participacion (
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
 
--- En todas las rondas, todos los participantes del torneo participan.
 CREATE TABLE IF NOT EXISTS ronda (
     id_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_torneo BIGINT NOT NULL,

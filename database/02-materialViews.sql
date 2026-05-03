@@ -9,3 +9,33 @@ WHERE p.posicion_final IS NOT NULL
 GROUP BY u.id_usuario, u.nombre
 ORDER BY promedio_puntos_flecha DESC
 LIMIT 50;
+
+CREATE UNIQUE INDEX idx_leaderboard_top_50_usuario
+ON leaderboard_top_50(id_usuario);
+
+/*
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LeaderboardScheduler {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public LeaderboardScheduler(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Scheduled(cron = "0 0 2 * * *", zone = "America/Santiago")
+    public void refreshLeaderboard() {
+        jdbcTemplate.execute(
+            "REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_top_50"
+        );
+    }
+}
+
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+</dependency>
+}*/
