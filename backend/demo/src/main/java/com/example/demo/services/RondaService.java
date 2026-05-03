@@ -32,4 +32,12 @@ public class RondaService {
 		}
 		rondaRepository.crearRonda(idTorneo, numeroRonda);
 	}
+
+    public Integer verPuntajeRonda(Long idParticipacion, Long idRonda) {
+        return rondaRepository.obtenerPuntajeCalculadoRonda(idParticipacion, idRonda);
+    }
+
+    public List<Ronda> obtenerTodas() {
+        return rondaRepository.obtenerTodas();
+    }
 }

@@ -40,4 +40,21 @@ public class RondaController {
 			return new ResponseEntity<>(e.getStatusCode());
 		}
 	}
+
+    @GetMapping("/participacion/{idParticipacion}/ronda/{idRonda}/puntaje")
+    public ResponseEntity<Integer> verPuntajeRonda(
+            @PathVariable Long idParticipacion,
+            @PathVariable Long idRonda) {
+        return ResponseEntity.ok(rondaService.verPuntajeRonda(idParticipacion, idRonda));
+    }
+
+    // Lista TODAS las rondas de la base de datos
+    @GetMapping
+    public ResponseEntity<List<Ronda>> obtenerTodas() {
+        List<Ronda> rondas = rondaService.obtenerTodas();
+        return rondas.isEmpty() ?
+                ResponseEntity.noContent().build() :
+                ResponseEntity.ok(rondas);
+    }
+
 }

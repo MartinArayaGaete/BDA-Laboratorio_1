@@ -45,13 +45,16 @@ public class FlechaRepository {
     }
 
     // Ejecuta el Procedimiento Almacenado 1 de PostgreSQL
-    public void guardarRondaCompletaSP(Long idParticipacion, Long idRonda, List<Integer> flechas) {
+    public void guardarRondaCompletaSP(Long idRonda, Long idParticipacion, List<Integer> flechas, Long idAdmin) {
         jdbcTemplate.execute(
                 (CallableStatementCreator) connection -> {
-                    CallableStatement cs = connection.prepareCall("CALL registrar_ronda_completa(?, ?, ?)");
-                    cs.setLong(1, idParticipacion);
-                    cs.setLong(2, idRonda);
-                    cs.setArray(3, connection.createArrayOf("int4", flechas.toArray()));
+                    // Llamamos al procedure que recibe 4 parámetros
+                    CallableStatement cs = connection.prepareCall("CALL registrar_puntaje_ronda(?, ?, ?, ?)");
+                    cs.setLong(1, idRonda);
+                    cs.setLong(2, idParticipacion);
+                    // Mapeamos el arreglo a "numeric" para que calce con el DECIMAL[] de Postgres
+                    cs.setArray(3, connection.createArrayOf("numeric", flechas.toArray(new Integer[0])));
+                    cs.setLong(4, idAdmin);
                     return cs;
                 },
                 (CallableStatementCallback<Void>) cs -> {

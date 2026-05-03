@@ -1,36 +1,50 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.InscritoDTO;
+import com.example.demo.models.Torneo;
 import com.example.demo.repositories.ParticipacionRepository;
+import com.example.demo.repositories.TorneoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ParticipacionService {
 
     private final ParticipacionRepository participacionRepository;
+    private final TorneoRepository torneoRepository;
 
-    public ParticipacionService(ParticipacionRepository participacionRepository) {
+    public ParticipacionService(ParticipacionRepository participacionRepository, TorneoRepository torneoRepository) {
         this.participacionRepository = participacionRepository;
+        this.torneoRepository = torneoRepository;
     }
 
+    @Transactional
     public void inscribirUsuario(Long idUsuario, Long idTorneo) {
-        // Validación: Evitar que el mismo usuario se inscriba dos veces en el mismo torneo
-        if (participacionRepository.existeParticipacion(idUsuario, idTorneo)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El usuario ya se encuentra inscrito en este torneo.");
+        // Obtener el torneo para revisar su estado
+        Torneo torneo = torneoRepository.buscarPorId(idTorneo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
+
+        // Si no está en 'NOT_STARTED', no puede entrar
+        if (!"NOT_STARTED".equals(torneo.getEstadoTorneo())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Las inscripciones están cerradas. El torneo ya está en curso o finalizado.");
         }
-        
+
+        // Verificar si ya estaba inscrito
+        if (participacionRepository.existeParticipacion(idUsuario, idTorneo)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El arquero ya está inscrito en este torneo");
+        }
+
+        // Inscribir
         participacionRepository.inscribirUsuario(idUsuario, idTorneo);
     }
 
     public List<InscritoDTO> obtenerInscritosPorTorneo(Long idTorneo) {
-        List<InscritoDTO> inscritos = participacionRepository.obtenerInscritosPorTorneo(idTorneo);
-        
-        // Retornamos la lista (si está vacía, el controlador decidirá si envía un NO_CONTENT o un OK con lista vacía)
-        return inscritos;
+        return participacionRepository.obtenerInscritosPorTorneo(idTorneo);
     }
 
     public Long obtenerIdParticipacion(Long idUsuario, Long idTorneo) {
@@ -40,7 +54,10 @@ public class ParticipacionService {
 
     @Transactional
     public void editarPuntajeManual(Long idAdmin, Long idRondaAfectada, Long idUsuario, Long idTorneo, Integer nuevoPuntaje) {
-        // Llamas al repositorio que preparará las variables y lanzará el UPDATE (que a su vez dispara tu trigger)
         participacionRepository.actualizarPuntajeFinalConTrigger(idAdmin, idRondaAfectada, nuevoPuntaje, idUsuario, idTorneo);
+    }
+
+    public List<Map<String, Object>> obtenerTodas() {
+        return participacionRepository.obtenerTodas();
     }
 }

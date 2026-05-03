@@ -5,9 +5,11 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.ConnectionCallback;
 import java.sql.PreparedStatement;
+
 
 @Repository
 public class ParticipacionRepository {
@@ -68,15 +70,15 @@ public class ParticipacionRepository {
                     "UPDATE participacion SET puntaje_final = ? WHERE id_usuario = ? AND id_torneo = ?"
                 )
             ) {
-                // 1. Seteamos el ID de quien hace el cambio (Para el Trigger)
+                // Seteamos el ID de quien hace el cambio (Para el Trigger)
                 ps1.setLong(1, idAdmin);
                 ps1.execute();
 
-                // 2. Seteamos el ID de la ronda afectada (Para el Trigger)
+                // Seteamos el ID de la ronda afectada (Para el Trigger)
                 ps2.setLong(1, idRondaAfectada);
                 ps2.execute();
 
-                // 3. Ejecutamos el Update real de la tabla
+                // Ejecutamos el Update real de la tabla
                 ps3.setInt(1, puntajeFinal);
                 ps3.setLong(2, idUsuario);
                 ps3.setLong(3, idTorneo);
@@ -84,5 +86,16 @@ public class ParticipacionRepository {
             }
             return null; // El callback requiere retornar algo, mandamos null
         });
+    }
+
+    public List<Map<String, Object>> obtenerTodas() {
+        String sql = """
+            SELECT p.id_participacion, p.id_usuario, u.nombre, p.id_torneo, t.nombre_torneo, p.puntaje_final
+            FROM participacion p
+            JOIN usuario u ON p.id_usuario = u.id_usuario
+            JOIN torneo t ON p.id_torneo = t.id_torneo
+            ORDER BY p.id_participacion ASC
+            """;
+        return jdbcTemplate.queryForList(sql);
     }
 }

@@ -12,7 +12,7 @@ INSERT INTO usuario (rut, nombre, correo, contrasena, rol) VALUES
 
 --  TORNEO (Estado 'CREADO' para indicar que no ha finalizado)
 INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino) VALUES
-(2, 'Gran Torneo Manual 2026', 'CREADO', '2026-06-10', '2026-06-12');;
+(2, 'Gran Torneo Manual 2026', 'NOT_STARTED', '2026-06-10', '2026-06-12');;
 
 --  RONDAS (ID 1, 2 y 3 para el Torneo 1)
 INSERT INTO ronda (id_torneo, numero_ronda) VALUES

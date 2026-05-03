@@ -74,4 +74,12 @@ public class TorneoRepository {
             return dto;
         }, idTorneo);
     }
+
+
+    // Pasa el torneo a estado 'IN_COURSE'
+    public int iniciarTorneo(Long idTorneo) {
+        String sql = "UPDATE torneo SET estado_torneo = 'IN_COURSE' WHERE id_torneo = ? AND estado_torneo = 'NOT_STARTED'";
+        // Retorna el número de filas afectadas. Si es 0, significa que el torneo no existía o ya había empezado.
+        return jdbcTemplate.update(sql, idTorneo);
+    }
 }

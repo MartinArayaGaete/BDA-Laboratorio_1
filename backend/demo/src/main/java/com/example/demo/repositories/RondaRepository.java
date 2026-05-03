@@ -52,4 +52,24 @@ public class RondaRepository {
             return Optional.empty();
         }
     }
+
+    public Integer obtenerPuntajeCalculadoRonda(Long idParticipacion, Long idRonda) {
+        String sql = "SELECT puntaje_ronda FROM puntaje_ronda WHERE id_participacion = ? AND id_ronda = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, Integer.class, idParticipacion, idRonda);
+        } catch (EmptyResultDataAccessException e) {
+            return 0; // Si aún no hay puntaje registrado
+        }
+    }
+
+    public List<Ronda> obtenerTodas() {
+        String sql = "SELECT * FROM ronda ORDER BY id_torneo ASC, numero_ronda ASC";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Ronda r = new Ronda();
+            r.setIdRonda(rs.getLong("id_ronda"));
+            r.setIdTorneo(rs.getLong("id_torneo"));
+            r.setNumeroRonda(rs.getInt("numero_ronda"));
+            return r;
+        });
+    }
 }

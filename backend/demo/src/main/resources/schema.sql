@@ -67,7 +67,8 @@ CREATE TABLE puntaje_ronda (
     id_participacion BIGINT NOT NULL,
     puntaje_ronda INT DEFAULT 0,
     FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda) ON DELETE CASCADE,
-    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion) ON DELETE CASCADE
+    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion) ON DELETE CASCADE,
+    CONSTRAINT uk_ronda_participacion UNIQUE (id_ronda, id_participacion)
 );;
 
 

@@ -10,6 +10,8 @@ import com.example.demo.services.FlechaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
 import java.util.Map;
 
@@ -60,7 +62,10 @@ public class TorneoController {
             return ResponseEntity.badRequest().body("Falta enviar el arreglo 'flechas' en el JSON");
         }
 
-        flechaService.registrarRondaCompleta(idTorneo, idUsuario, numeroRonda, flechas);
+        // ID temporal del administrador
+        Long idAdmin = 1L;
+        flechaService.registrarRondaCompleta(idTorneo, idUsuario, numeroRonda, flechas, idAdmin);
+
         return ResponseEntity.status(HttpStatus.CREATED).body("¡Ronda registrada con éxito mediante Procedimiento Almacenado!");
     }
 
@@ -77,8 +82,25 @@ public class TorneoController {
     }
 
     @PostMapping("/registrar-puntaje")
-    public ResponseEntity<String> registrarPuntajeRonda(@RequestBody PuntajeRondaDTO request) { // 2. Usar PuntajeRondaDTO
+    public ResponseEntity<String> registrarPuntajeRonda(@RequestBody PuntajeRondaDTO request) {
         flechaService.registrarRondaCompletaDTO(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("Puntaje registrado");
+    }
+
+    /**
+     * Inicia un torneo oficialmente, bloqueando nuevas inscripciones.
+     * POST /api/torneos/{idTorneo}/iniciar
+     */
+    @PostMapping("/{idTorneo}/iniciar")
+    public ResponseEntity<String> iniciarTorneo(@PathVariable Long idTorneo) {
+        try {
+            torneoService.iniciarTorneo(idTorneo);
+            return ResponseEntity.ok("Torneo iniciado con éxito. Ya no se aceptan nuevos inscritos.");
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al iniciar el torneo.");
+        }
     }
 }

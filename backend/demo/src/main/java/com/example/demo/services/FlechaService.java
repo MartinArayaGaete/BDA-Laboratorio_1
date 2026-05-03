@@ -29,7 +29,7 @@ public class FlechaService {
         return flechaRepository.obtenerFlechasDeArqueroEnTorneo(idUsuario, idTorneo);
     }
 
-    public void registrarRondaCompleta(Long idTorneo, Long idUsuario, Integer numeroRonda, List<Integer> flechas) {
+    public void registrarRondaCompleta(Long idTorneo, Long idUsuario, Integer numeroRonda, List<Integer> flechas, Long idAdmin) {
         for (Integer puntaje : flechas) {
             if (puntaje < 0 || puntaje > 10) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trampa detectada: Los puntajes deben estar entre 0 y 10");
@@ -42,10 +42,12 @@ public class FlechaService {
         Long idRonda = rondaRepository.obtenerIdRonda(idTorneo, numeroRonda)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La ronda " + numeroRonda + " no existe en este torneo"));
 
-        flechaRepository.guardarRondaCompletaSP(idParticipacion, idRonda, flechas);
+        flechaRepository.guardarRondaCompletaSP(idRonda, idParticipacion, flechas, idAdmin);
     }
+
+    // MÉTODO NUEVO CON DTO:
     @Transactional
-    public void registrarRondaCompletaDTO(PuntajeRondaDTO request) { // <--- 2. Cambiar tipo
+    public void registrarRondaCompletaDTO(PuntajeRondaDTO request) {
         // Validaciones
         for (Integer puntaje : request.getFlechas()) {
             if (puntaje < 0 || puntaje > 10) {
@@ -53,19 +55,17 @@ public class FlechaService {
             }
         }
 
-        // Llamada al repo (usando los getters del DTO)
         flechaRepository.guardarRondaCompletaSP(
-            request.getIdParticipacion(), 
-            request.getIdRonda(), 
-            request.getFlechas()
+                request.getIdRonda(),           // 1. ID de la Ronda
+                request.getIdParticipacion(),   // 2. ID de la Participación
+                request.getFlechas(),           // 3. Arreglo de flechas
+                request.getIdAdmin()            // 4. ID del Administrador (¡Este faltaba!)
         );
 
         registrarLogSistema(request);
     }
 
-    private void registrarLogSistema(PuntajeRondaDTO request) { 
-        // Aquí usas request.getIdAdmin() cuando implementes el log
+    private void registrarLogSistema(PuntajeRondaDTO request) {
         System.out.println("Log: El admin " + request.getIdAdmin() + " registró puntajes.");
     }
-    
 }

@@ -28,7 +28,7 @@ public class TorneoService {
         torneoRepository.crearTorneo(
                 dto.getIdCategoria(),
                 dto.getNombreTorneo(),
-                "CREADO",
+                "NOT_STARTED",
                 dto.getFechaInicio(),
                 dto.getFechaTermino()
         );
@@ -47,14 +47,20 @@ public class TorneoService {
 
     @Transactional
     public void finalizarTorneo(Long idTorneo) {
-        // Validar que el torneo exista
-        torneoRepository.buscarPorId(idTorneo)
+        // Validar que el torneo exista y revisar su estado actual
+        Torneo torneo = torneoRepository.buscarPorId(idTorneo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
 
-        // Cambiar el estado a COMPLETED (Requisito estricto de tu SP)
+        // Solo torneos EN CURSO pueden finalizarse
+        if (!"IN_COURSE".equals(torneo.getEstadoTorneo())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Solo se pueden finalizar torneos que estén en curso (IN_COURSE). Estado actual: " + torneo.getEstadoTorneo());
+        }
+
+        //  Cambiar el estado a COMPLETED
         torneoRepository.finalizarTorneo(idTorneo);
 
-        // Ejecutar el Procedimiento Almacenado para calcular el ranking
+        //  Ejecutar el Procedimiento Almacenado para calcular el ranking
         try {
             torneoRepository.actualizarPosicionesSP(idTorneo);
         } catch (Exception e) {
@@ -68,5 +74,18 @@ public class TorneoService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado");
         }
         return torneoRepository.obtenerPodio(idTorneo);
+    }
+
+    @Transactional
+    public void iniciarTorneo(Long idTorneo) {
+        int filasAfectadas = torneoRepository.iniciarTorneo(idTorneo);
+
+        if (filasAfectadas == 0) {
+            // Si no se actualizó nada, lanzamos un error claro para el frontend
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "No se pudo iniciar el torneo. Verifica que el torneo exista y esté en estado no haya iniciado."
+            );
+        }
     }
 }

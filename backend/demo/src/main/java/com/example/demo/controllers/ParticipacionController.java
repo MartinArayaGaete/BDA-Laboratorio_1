@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -31,8 +32,10 @@ public class ParticipacionController {
         try {
             participacionService.inscribirUsuario(idUsuario, idTorneo);
             return ResponseEntity.status(HttpStatus.CREATED).body("Arquero inscrito exitosamente");
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         } catch (Exception e) {
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
         }
     }
 
@@ -47,5 +50,14 @@ public class ParticipacionController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return ResponseEntity.ok(inscritos);
+    }
+
+
+    @GetMapping
+    public ResponseEntity<List<Map<String, Object>>> obtenerTodas() {
+        List<Map<String, Object>> participaciones = participacionService.obtenerTodas();
+        return participaciones.isEmpty() ?
+                ResponseEntity.noContent().build() :
+                ResponseEntity.ok(participaciones);
     }
 }
