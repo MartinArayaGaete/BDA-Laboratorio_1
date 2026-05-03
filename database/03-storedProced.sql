@@ -25,13 +25,13 @@ BEGIN
     WHERE id_ronda = p_id_ronda;
 
     -- 2. Validar estado
-    SELECT estado_torneo INTO v_estado
-    FROM torneo
-    WHERE id_torneo = v_torneo_id;
-
-    IF v_estado NOT IN ('COMPLETED', 'NOT_STARTED') THEN
-        RAISE EXCEPTION 'El torneo no está activo';
-    END IF;
+	SELECT estado_torneo INTO v_estado
+	FROM torneo
+	WHERE id_torneo = v_torneo_id;
+	
+	IF v_estado <> 'IN_COURSE' THEN
+	    RAISE EXCEPTION 'El torneo no está en curso';
+	END IF;
 
     -- 3. Calcular total
     FOREACH v_puntaje IN ARRAY p_puntajes_flechas LOOP
