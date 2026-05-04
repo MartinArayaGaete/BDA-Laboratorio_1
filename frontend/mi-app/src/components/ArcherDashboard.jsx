@@ -41,60 +41,31 @@ function ArcherDashboard() {
     try {
       setTorneosCargando(true);
       setErrorCarga("");
-      
-      // Intentar nuevo endpoint
-      try {
-        const resp = await api.get("/torneos/disponibles", {
-          params: {
-            idUsuario: usuario.idUsuario,
-            page: pagina,
-            size: PAGE_SIZE,
-          },
-        });
+      const resp = await api.get("/torneos/disponibles", {
+        params: {
+          idUsuario: usuario.idUsuario,
+          page: pagina,
+          size: PAGE_SIZE,
+        },
+      });
 
-        const payload = resp.data || {};
-        const disponibles = Array.isArray(payload.content) ? payload.content : [];
-        const totalPages = Number(payload.totalPages || 0);
+      const payload = resp.data || {};
+      const disponibles = Array.isArray(payload.content)
+        ? payload.content
+        : Array.isArray(payload.torneos)
+        ? payload.torneos
+        : [];
+      const totalPages = Number(payload.totalPages || 0);
 
-        setTorneos(disponibles);
-        setTorneosTotalPages(totalPages);
-        return;
-      } catch (err1) {
-        console.warn("Endpoint /torneos/disponibles falló, usando fallback:", err1?.message);
-      }
-
-      // Fallback: legacy endpoint
-      const resp = await api.get("/torneos");
-      const todasLosT = Array.isArray(resp.data) ? resp.data : [];
-      
-      // Filtrar: NOT_STARTED y NO inscrito
-      const disponibles = [];
-      for (const t of todasLosT) {
-        if (t.estadoTorneo === "NOT_STARTED") {
-          try {
-            const inscritos = await api.get(`/participaciones/torneo/${t.idTorneo}`);
-            const participacionesArray = Array.isArray(inscritos.data) ? inscritos.data : [];
-            const yaInscrito = participacionesArray.some(p => p.idUsuario === usuario.idUsuario);
-            if (!yaInscrito) {
-              disponibles.push(t);
-            }
-          } catch (err) {
-            // Si no se puede verificar inscripción, incluirlo igualmente
-            disponibles.push(t);
-          }
-        }
-      }
-
-      // Paginar en frontend (fallback)
-      const inicio = pagina * PAGE_SIZE;
-      const fin = inicio + PAGE_SIZE;
-      const paginados = disponibles.slice(inicio, fin);
-      const totalPages = Math.ceil(disponibles.length / PAGE_SIZE);
-
-      setTorneos(paginados);
+      setTorneos(disponibles);
       setTorneosTotalPages(totalPages);
     } catch (err) {
-      console.error("Error traer torneos (legacy fallback también falló):", err);
+      if (esErrorAuth(err)) {
+        localStorage.removeItem("usuarioLogueado");
+        navigate("/login");
+        return;
+      }
+      console.error("Error traer torneos:", err);
       setErrorCarga("No se pudieron cargar los torneos. Revisa tu sesión o backend.");
       setTorneos([]);
       setTorneosTotalPages(0);
@@ -107,112 +78,46 @@ function ArcherDashboard() {
     try {
       setHistorialCargando(true);
       setErrorCarga("");
+      const resp = await api.get(`/arqueros/${usuario.idUsuario}/historial`, {
+        params: {
+          page: pagina,
+          size: PAGE_SIZE,
+        },
+      });
 
-      // Intentar nuevo endpoint
-      try {
-        const resp = await api.get(`/arqueros/${usuario.idUsuario}/historial`, {
-          params: {
-            page: pagina,
-            size: PAGE_SIZE,
-          },
-        });
+      const payload = resp.data || {};
+      const torneosPagina = Array.isArray(payload.torneos) ? payload.torneos : [];
+      const totalPages = Number(payload.totalPages || 0);
 
-        const payload = resp.data || {};
-        const torneosPagina = Array.isArray(payload.torneos) ? payload.torneos : [];
-        const totalPages = Number(payload.totalPages || 0);
+      const torneosVisible = Array.isArray(torneosPagina) ? torneosPagina : [];
+      const flechasPorTorneoLocal = {};
 
-        const torneosVisible = Array.isArray(torneosPagina) ? torneosPagina : [];
-        const flechasPorTorneoLocal = {};
+      torneosVisible.forEach((torneo) => {
+        const rondas = Array.isArray(torneo.rondas) ? torneo.rondas : [];
+        const flechasDelTorneo = [];
 
-        torneosVisible.forEach((torneo) => {
-          const rondas = Array.isArray(torneo.rondas) ? torneo.rondas : [];
-          const flechasDelTorneo = [];
+        rondas.forEach((ronda) => {
+          const numeroRonda = ronda?.numeroRonda;
+          const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
 
-          rondas.forEach((ronda) => {
-            const numeroRonda = ronda?.numeroRonda;
-            const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
-
-            flechasRonda.forEach((flecha) => {
-              flechasDelTorneo.push({ ...flecha, numeroRonda });
-            });
+          flechasRonda.forEach((flecha) => {
+            flechasDelTorneo.push({ ...flecha, numeroRonda });
           });
-
-          flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
         });
 
-        setHistorial(torneosVisible);
-        setHistorialTotalPages(totalPages);
-        setFlechasPorTorneo(flechasPorTorneoLocal);
-        return;
-      } catch (err1) {
-        console.warn("Endpoint /arqueros/{id}/historial falló, usando fallback:", err1?.message);
-      }
+        flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
+      });
 
-      // Fallback: legacy endpoint
-      const resp = await api.get("/torneos");
-      const todasLosTorneos = Array.isArray(resp.data) ? resp.data : [];
-
-      const historialTemp = [];
-      for (const torneo of todasLosTorneos) {
-        try {
-          const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
-          const participacionesArray = Array.isArray(inscritos.data) ? inscritos.data : [];
-          const inscrito = participacionesArray.find(p => p.idUsuario === usuario.idUsuario);
-          
-          if (inscrito) {
-            try {
-              const flechasResp = await api.get(`/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`);
-              const flechas = Array.isArray(flechasResp.data) ? flechasResp.data : [];
-              
-              // Calcular puntaje y posición
-              const puntajeFinal = flechas.reduce((sum, f) => sum + (f.puntaje || 0), 0);
-              
-              // Para posición, obtener todos los inscritos
-              const allFlechas = [];
-              for (const part of participacionesArray) {
-                try {
-                  const fResp = await api.get(`/torneos/${torneo.idTorneo}/arqueros/${part.idUsuario}/flechas`);
-                  const fs = Array.isArray(fResp.data) ? fResp.data : [];
-                  allFlechas.push({
-                    idUsuario: part.idUsuario,
-                    puntaje: fs.reduce((sum, f) => sum + (f.puntaje || 0), 0),
-                  });
-                } catch (e) {
-                  // ignorar
-                }
-              }
-
-              const posicionFinal = allFlechas.filter(x => x.puntaje > puntajeFinal).length + 1;
-
-              historialTemp.push({
-                ...torneo,
-                puntajeFinal,
-                posicionFinal,
-              });
-            } catch (e) {
-              // Si falla obtener flechas, incluir sin ellas
-              historialTemp.push({
-                ...torneo,
-                puntajeFinal: 0,
-                posicionFinal: 0,
-              });
-            }
-          }
-        } catch (e) {
-          // ignorar
-        }
-      }
-
-      // Paginar en frontend
-      const inicio = pagina * PAGE_SIZE;
-      const fin = inicio + PAGE_SIZE;
-      const paginados = historialTemp.slice(inicio, fin);
-      const totalPages = Math.ceil(historialTemp.length / PAGE_SIZE);
-
-      setHistorial(paginados);
+      setHistorial(torneosVisible);
       setHistorialTotalPages(totalPages);
+      setFlechasPorTorneo(flechasPorTorneoLocal);
     } catch (err) {
-      console.error("Error traer historial (fallback también falló):", err);
+      if (esErrorAuth(err)) {
+        localStorage.removeItem("usuarioLogueado");
+        navigate("/login");
+        return;
+      }
+      console.error("Error traer historial:", err);
       setErrorCarga("No se pudo cargar el historial. Revisa tu sesión o backend.");
       setHistorial([]);
       setHistorialTotalPages(0);
@@ -225,67 +130,15 @@ function ArcherDashboard() {
   const cargarEstadisticas = async () => {
     try {
       setEstadisticasCargando(true);
-
-      // Intentar nuevo endpoint
-      try {
-        const resp = await api.get(`/arqueros/${usuario.idUsuario}/estadisticas`);
-        setEstadisticas(resp.data || {});
-        setEstadisticasCargando(false);
-        return;
-      } catch (err1) {
-        console.warn("Endpoint /arqueros/{id}/estadisticas falló, calculando desde historial:", err1?.message);
-      }
-
-      // Fallback: calcular a partir de historial y flechas
-      let totalTorneos = 0;
-      let totalFlechas = 0;
-      let flechasAcertadas = 0;
-      let totalPuntos = 0;
-
-      try {
-        const resp = await api.get("/torneos");
-        const todasLosTorneos = Array.isArray(resp.data) ? resp.data : [];
-
-        for (const torneo of todasLosTorneos) {
-          try {
-            const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
-            const participacionesArray = Array.isArray(inscritos.data) ? inscritos.data : [];
-            const inscrito = participacionesArray.find(p => p.idUsuario === usuario.idUsuario);
-            
-            if (inscrito) {
-              totalTorneos += 1;
-              try {
-                const flechasResp = await api.get(`/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`);
-                const flechas = Array.isArray(flechasResp.data) ? flechasResp.data : [];
-                
-                totalFlechas += flechas.length;
-                flechasAcertadas += flechas.filter(f => (f.puntaje || 0) > 0).length;
-                totalPuntos += flechas.reduce((sum, f) => sum + (f.puntaje || 0), 0);
-              } catch (e) {
-                // ignorar si no hay flechas
-              }
-            }
-          } catch (e) {
-            // ignorar
-          }
-        }
-      } catch (err) {
-        console.error("Error calculando estadísticas:", err);
-      }
-
-      const porcentajeAcierto = totalFlechas > 0 ? Math.round((flechasAcertadas / totalFlechas) * 100) : 0;
-      const promedioPuntos = totalTorneos > 0 ? Math.round(totalPuntos / totalTorneos) : 0;
-
-      setEstadisticas({
-        torneosTotales: totalTorneos,
-        totalFlechas,
-        flechasAcertadas,
-        porcentajeAcierto,
-        totalPuntos,
-        promedioPuntos,
-      });
+      const resp = await api.get(`/arqueros/${usuario.idUsuario}/estadisticas`);
+      setEstadisticas(resp.data || {});
     } catch (err) {
-      console.error("Error traer estadisticas (fallback también falló):", err);
+      if (esErrorAuth(err)) {
+        localStorage.removeItem("usuarioLogueado");
+        navigate("/login");
+        return;
+      }
+      console.error("Error traer estadisticas:", err);
       setEstadisticas({
         torneosTotales: 0,
         totalFlechas: 0,
