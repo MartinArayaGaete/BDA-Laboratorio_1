@@ -17,7 +17,9 @@ INSERT INTO usuario (rut, nombre, correo, contrasena, rol) VALUES
 INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino) VALUES
 (1, 'Copa Apertura', 'IN_COURSE', '2026-02-08', '2026-02-09'),
 (2, 'Open Valle',    'IN_COURSE', '2026-02-22', '2026-02-23'),
-(3, 'Torneo Costa',  'IN_COURSE', '2026-03-15', '2026-03-16');
+(3, 'Torneo Costa',  'IN_COURSE', '2026-03-15', '2026-03-16'),
+(4, 'Liga Nacional 2026', 'NOT_STARTED', '2027-05-01', '2027-05-30'),
+(5, 'Torneo Novatos 2026', 'NOT_STARTED', '2027-08-10', '2027-08-12');
 
 -- 4. PARTICIPACION
 INSERT INTO participacion (id_usuario, id_torneo, puntaje_final, posicion_final) VALUES
@@ -35,7 +37,15 @@ INSERT INTO participacion (id_usuario, id_torneo, puntaje_final, posicion_final)
 -- Torneos 3
 (2,3,NULL,NULL),
 (4,3,NULL,NULL),
-(5,3,NULL,NULL);
+(5,3,NULL,NULL),
+
+-- Torneos 4
+(5,4,NULL,NULL),
+
+-- Torneos 5
+(3,5,NULL,NULL);
+
+
 
 
 -- 5. RONDA
@@ -46,6 +56,12 @@ INSERT INTO ronda (id_torneo, numero_ronda) VALUES
 (2,1),(2,2), (2,3),
 -- Torneo 3
 (3,1),(3,2), (3,3);
+-- Torneo 4
+(4,1),(4,2), (4,3);
+-- Torneo 5
+(5,1),(5,2), (5,3);
+-- Torneo 6
+(6,1),(6,2), (6,3);
 
 -- 6. Procedimiento almacenado
 
