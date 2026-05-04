@@ -11,7 +11,7 @@ function TorneoDetalle() {
   const [torneo, setTorneo] = useState(null);
   const [inscritos, setInscritos] = useState([]);
   const [rondas, setRondas] = useState([]);
-  const [podio, setPodio] = useState([]); // Estado para guardar el podio
+  const [podio, setPodio] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [usuarioSel, setUsuarioSel] = useState("");
@@ -129,7 +129,6 @@ function TorneoDetalle() {
           "¡Torneo finalizado y posiciones calculadas con éxito!",
         );
 
-        // Recargamos los datos para ver el nuevo estado 'COMPLETED' y el podio
         await cargarDatosGenerales();
       } catch (err) {
         const msg =
@@ -156,7 +155,7 @@ function TorneoDetalle() {
         </div>
       )}
 
-      {/* Cabecera Responsiva */}
+      {/* Cabecera */}
       <div
         className="card shadow-sm mb-4 border-0"
         style={{ borderLeft: "4px solid #FFD700" }}
