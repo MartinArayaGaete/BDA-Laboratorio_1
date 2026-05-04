@@ -64,4 +64,18 @@ public class UsuarioRepository {
         String sql = "DELETE FROM usuario WHERE rut = ?";
         jdbcTemplate.update(sql, rut);
     }
+
+    // Cuenta el total de usuarios con un rol específico
+    public long contarUsuariosPorRol(String rol) {
+        String sql = "SELECT COUNT(*) FROM usuario WHERE rol = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, rol);
+        return count != null ? count : 0;
+    }
+
+    // Obtiene usuarios de un rol específico de forma paginada, ordenados por nombre
+    public List<Usuario> obtenerUsuariosPorRolPaginado(String rol, int page, int size) {
+        String sql = "SELECT id_usuario, rut, nombre, correo, contrasena, rol FROM usuario WHERE rol = ? ORDER BY nombre ASC LIMIT ? OFFSET ?";
+        int offset = page * size;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowToUsuario(rs), rol, size, offset);
+    }
 }

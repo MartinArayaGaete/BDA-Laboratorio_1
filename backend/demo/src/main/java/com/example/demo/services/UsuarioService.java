@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.dtos.UserInfoDTO;
 import com.example.demo.dtos.UsuarioRegistroDTO;
+import com.example.demo.dtos.UsuariosPaginadosResponse;
 import com.example.demo.models.Usuario;
 import com.example.demo.repositories.UsuarioRepository;
 import org.springframework.http.HttpStatus;
@@ -78,5 +79,28 @@ public class UsuarioService {
                 usuario.getCorreo(),
                 usuario.getNombre()
         );
+    }
+
+    // Obtiene usuarios de un rol específico de forma paginada
+    public UsuariosPaginadosResponse obtenerUsuariosPorRolPaginados(String rol, int page, int size) {
+        // Validar parámetros de paginación
+        if (page < 0 || size <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parámetros de paginación inválidos");
+        }
+
+        long totalElements = usuarioRepository.contarUsuariosPorRol(rol);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        // Validar que la página no exceda el total
+        if (page >= totalPages && totalElements > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La página solicitada supera el total de páginas disponibles");
+        }
+
+        List<Usuario> usuarios = usuarioRepository.obtenerUsuariosPorRolPaginado(rol, page, size);
+        List<UserInfoDTO> usuariosDTO = usuarios.stream()
+                .map(this::toUserInfoDTO)
+                .toList();
+
+        return new UsuariosPaginadosResponse(usuariosDTO, page, size, totalElements, totalPages);
     }
 }

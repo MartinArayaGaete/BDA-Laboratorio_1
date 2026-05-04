@@ -2,6 +2,7 @@ package com.example.demo.controllers;
 
 import com.example.demo.dtos.UserInfoDTO;
 import com.example.demo.dtos.UsuarioRegistroDTO;
+import com.example.demo.dtos.UsuariosPaginadosResponse;
 import com.example.demo.models.Usuario;
 import com.example.demo.services.UsuarioService;
 import org.springframework.http.HttpStatus;
@@ -79,5 +80,14 @@ public class UsuarioController {
         } catch (ResponseStatusException e) {
             return new ResponseEntity<>(e.getStatusCode());
         }
+    }
+
+    // Obtiene una lista paginada de usuarios filtrados por su rol
+    @GetMapping("/rol/{rol}")
+    public ResponseEntity<UsuariosPaginadosResponse> obtenerUsuariosPorRolPaginados(
+            @PathVariable String rol,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+        return ResponseEntity.ok(usuarioService.obtenerUsuariosPorRolPaginados(rol, page, size));
     }
 }
