@@ -6,6 +6,11 @@ const loginService = {
     return response.data;
   },
 
+  logout: async () => {
+    const response = await api.post("/auth/logout");
+    return response.data;
+  },
+
   refreshToken: async () => {
     const response = await api.post("/auth/refresh-token");
     return response.data;

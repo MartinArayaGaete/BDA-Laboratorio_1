@@ -2,6 +2,7 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -37,13 +38,21 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // permite el login
+                        //  Rutas Públicas (Cualquiera puede acceder)
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 
-                        // Permitimos el registro de cualquier usuario
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/usuarios").permitAll()
+                        //  Rutas Estrictas de Administrador
+                        .requestMatchers(HttpMethod.POST, "/api/torneos").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/*/iniciar").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/*/finalizar").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/*/rondas/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/registrar-puntaje").hasRole("ADMIN")
 
-                        // el resto protegido
+                        //  Rutas Compartidas
+                        .requestMatchers(HttpMethod.POST, "/api/participaciones/inscribir").hasAnyRole("ADMIN", "ARQUERO")
+
+                        //  Todas las demás rutas (GET a historiales, torneos, etc.) requieren estar autenticado
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

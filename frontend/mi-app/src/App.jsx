@@ -1,25 +1,46 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import NavbarLayout from "./components/NavbarLayout"; // <-- Actualizado
+import NavbarLayout from "./components/NavbarLayout";
 import Login from "./components/Login.jsx";
 import ArcherDashboard from "./components/ArcherDashboard.jsx";
-import AdminDashboard from "./components/AdminDashboard.jsx";
+import AdminTorneos from "./components/AdminTorneos.jsx";
+import CrearTorneo from "./components/CrearTorneo.jsx";
+import TorneoDetalle from "./components/TorneoDetalle.jsx";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
 
+        {/* --- RUTAS DEL ADMINISTRADOR --- */}
         <Route
           path="/admin"
           element={
             <NavbarLayout>
-              <AdminDashboard />
+              <AdminTorneos />
             </NavbarLayout>
           }
         />
+        <Route
+          path="/admin/crear-torneo"
+          element={
+            <NavbarLayout>
+              <CrearTorneo />
+            </NavbarLayout>
+          }
+        />
+        <Route
+          path="/admin/torneo/:idTorneo"
+          element={
+            <NavbarLayout>
+              <TorneoDetalle />
+            </NavbarLayout>
+          }
+        />
+
+        {/* --- RUTAS DEL ARQUERO --- */}
         <Route
           path="/archer"
           element={
@@ -28,7 +49,6 @@ function App() {
             </NavbarLayout>
           }
         />
-        <Route path="/arhcer" element={<Navigate to="/archer" replace />} />
       </Routes>
     </BrowserRouter>
   );

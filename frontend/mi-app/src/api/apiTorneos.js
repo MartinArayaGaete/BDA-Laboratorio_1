@@ -7,13 +7,27 @@ const torneoService = {
     return response.data;
   },
 
-  // Crear un nuevo torneo (Requerimiento 1 y 2)
+  // Crear un nuevo torneo
   crearTorneo: async (datosTorneo) => {
     const response = await api.post("/torneos", datosTorneo);
     return response.data;
   },
 
-  // Registrar ronda completa - Llama al Procedimiento Almacenado 1
+  // Iniciar el torneo
+  iniciarTorneo: async (idTorneo) => {
+    const response = await api.post(`/torneos/${idTorneo}/iniciar`);
+    return response.data;
+  },
+
+  // --- AQUÍ ESTÁ LA SOLUCIÓN: Agregamos la función para crear rondas ---
+  crearRonda: async (idTorneo, numeroRonda) => {
+    const response = await api.post(
+      `/torneos/${idTorneo}/rondas/${numeroRonda}`,
+    );
+    return response.data;
+  },
+
+  // Registrar ronda completa
   registrarPuntajes: async (idTorneo, idUsuario, numeroRonda, flechas) => {
     const response = await api.post(
       `/torneos/${idTorneo}/arqueros/${idUsuario}/rondas/${numeroRonda}/flechas`,
@@ -22,13 +36,13 @@ const torneoService = {
     return response.data;
   },
 
-  // Finalizar torneo y calcular ranking - Llama al Procedimiento Almacenado 2
+  // Finalizar torneo y calcular ranking
   finalizarTorneo: async (idTorneo) => {
     const response = await api.post(`/torneos/${idTorneo}/finalizar`);
     return response.data;
   },
 
-  // Obtener el podio (Requerimiento 10)
+  // Obtener el podio
   obtenerPodio: async (idTorneo) => {
     const response = await api.get(`/torneos/${idTorneo}/podio`);
     return response.data;

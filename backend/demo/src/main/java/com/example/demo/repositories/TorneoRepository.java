@@ -89,8 +89,6 @@ public class TorneoRepository {
         jdbcTemplate.update("CALL actualizar_posiciones(?)", idTorneo);
     }
 
-    // No olvides agregar este import arriba:
-// import com.example.demo.dtos.InscritoDTO;
 
     public List<InscritoDTO> obtenerPodio(Long idTorneo) {
         String sql = """
