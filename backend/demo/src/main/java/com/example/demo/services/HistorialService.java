@@ -69,6 +69,27 @@ public class HistorialService {
 
         // Armar la estructura de torneos con rondas y flechas
         List<HistorialTorneoDTO> torneos = new ArrayList<>();
+
+        // Preparar batching: obtener todas las flechas para las participaciones en página
+        List<Long> idsParticipacion = new ArrayList<>();
+        for (Map<String, Object> p : participacionesData) {
+            Long idPart = asLong(p.get("id_participacion"));
+            if (idPart != null) idsParticipacion.add(idPart);
+        }
+
+        List<Map<String, Object>> flechasBatch = flechaRepository.obtenerFlechasPorParticipaciones(idsParticipacion);
+
+        // Organizar flechas por id_participacion -> numero_ronda -> list de flechas
+        Map<Long, Map<Integer, List<Map<String, Object>>>> flechasPorParticipacion = new HashMap<>();
+        for (Map<String, Object> f : flechasBatch) {
+            Long idPart = asLong(f.get("id_participacion"));
+            Integer numeroRonda = asInteger(f.get("numero_ronda"));
+            if (idPart == null || numeroRonda == null) continue;
+            flechasPorParticipacion.computeIfAbsent(idPart, k -> new HashMap<>())
+                    .computeIfAbsent(numeroRonda, k -> new ArrayList<>())
+                    .add(f);
+        }
+
         for (Map<String, Object> participacion : participacionesData) {
             Long idParticipacion = asLong(participacion.get("id_participacion"));
             Long idTorneo = asLong(participacion.get("id_torneo"));
@@ -84,12 +105,17 @@ public class HistorialService {
             // Armar la estructura de rondas con flechas
             List<HistorialRondaDTO> rondas = new ArrayList<>();
             for (Map<String, Object> ronda : rondasData) {
-                Long idRonda = asLong(ronda.get("id_ronda"));
                 Integer numeroRonda = asInteger(ronda.get("numero_ronda"));
                 Integer puntajeRonda = asInteger(ronda.get("puntaje_ronda"));
 
-                // Obtener flechas de esta ronda
-                List<Map<String, Object>> flechasData = flechaRepository.obtenerFlechasPorRonda(idParticipacion, idRonda);
+                // Obtener flechas de esta ronda desde el batch (si existen)
+                List<Map<String, Object>> flechasData = new ArrayList<>();
+                if (idParticipacion != null) {
+                    Map<Integer, List<Map<String, Object>>> porRonda = flechasPorParticipacion.get(idParticipacion);
+                    if (porRonda != null && porRonda.get(numeroRonda) != null) {
+                        flechasData = porRonda.get(numeroRonda);
+                    }
+                }
 
                 // Armar la estructura de flechas
                 List<HistorialFlechaDTO> flechas = new ArrayList<>();

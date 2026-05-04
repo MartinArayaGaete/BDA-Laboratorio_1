@@ -12,6 +12,8 @@ import java.lang.String;
 import java.sql.CallableStatement;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 @Repository
 public class FlechaRepository {
@@ -101,6 +103,27 @@ public class FlechaRepository {
             ORDER BY f.id_flecha ASC
             """;
         return jdbcTemplate.queryForList(sql, idParticipacion, idRonda);
+    }
+
+    /**
+     * Obtiene todas las flechas para un conjunto de participaciones en una sola consulta.
+     * Retorna Map con keys: id_participacion, numero_ronda, id_flecha, puntaje
+     */
+    public List<Map<String, Object>> obtenerFlechasPorParticipaciones(List<Long> idsParticipacion) {
+        if (idsParticipacion == null || idsParticipacion.isEmpty()) return Collections.emptyList();
+
+        String placeholders = idsParticipacion.stream().map(i -> "?").collect(Collectors.joining(","));
+        String sql = String.format("""
+            SELECT pr.id_participacion, r.numero_ronda, f.id_flecha, f.puntaje
+            FROM flecha f
+            INNER JOIN puntaje_ronda pr ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+            INNER JOIN ronda r ON pr.id_ronda = r.id_ronda
+            WHERE pr.id_participacion IN (%s)
+            ORDER BY pr.id_participacion ASC, r.numero_ronda ASC, f.id_flecha ASC
+            """, placeholders);
+
+        Object[] params = idsParticipacion.toArray();
+        return jdbcTemplate.queryForList(sql, params);
     }
 
     /**
