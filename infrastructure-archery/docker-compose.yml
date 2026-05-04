@@ -5,16 +5,13 @@ services:
       dockerfile: Dockerfile
     container_name: frontend-archery
     ports:
-      - "${FRONT_PORT:-3000}:3000" # React
+      - "${FRONT_PORT:-3000}:3000"
     environment:
-      VITE_FRONT_SERVER: "${FRONT_SERVER:-localhost}"
-      VITE_FRONT_PORT: "${FRONT_PORT:-3000}"
-      VITE_BACK_SERVER: "${BACK_HOST:-0.0.0.0}"
-      VITE_BACK_PORT: "${BACK_PORT:-8100}"
-
+      # ... tus env vars ...
       TZ: "${APP_TIMEZONE:-America/Santiago}"
     volumes:
       - ../frontend/mi-app:/app
+      - /app/node_modules
     restart: unless-stopped
     networks:
       - archeryNetwork
