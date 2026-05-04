@@ -7,6 +7,12 @@ const arquerosService = {
     });
     return response.data;
   },
+
+  // Método para el Requisito 9
+  obtenerMejoresMes: async () => {
+    const response = await api.get("/arqueros/rendimiento/ultimo-mes");
+    return response.data;
+  },
 };
 
 export default arquerosService;

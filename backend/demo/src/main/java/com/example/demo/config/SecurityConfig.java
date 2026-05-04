@@ -38,9 +38,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        //  Rutas Públicas (Cualquiera puede acceder)
+                        //  Rutas Públicas
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+
 
                         //  Rutas Estrictas de Administrador
                         .requestMatchers(HttpMethod.POST, "/api/torneos").hasRole("ADMIN")
@@ -51,6 +52,8 @@ public class SecurityConfig {
 
                         //  Rutas Compartidas
                         .requestMatchers(HttpMethod.POST, "/api/participaciones/inscribir").hasAnyRole("ADMIN", "ARQUERO")
+                        .requestMatchers(HttpMethod.GET, "/api/torneos/leaderboard").hasAnyRole("ADMIN", "ARQUERO")
+                        .requestMatchers(HttpMethod.GET, "/api/arqueros/rendimiento/ultimo-mes").hasAnyRole("ADMIN", "ARQUERO")
 
                         //  Todas las demás rutas (GET a historiales, torneos, etc.) requieren estar autenticado
                         .anyRequest().authenticated()

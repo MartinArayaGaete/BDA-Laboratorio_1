@@ -78,4 +78,8 @@ public class FlechaService {
     public List<LeaderboardDTO> obtenerLeaderboard() {
         return flechaRepository.obtenerLeaderboardHistorico();
     }
+
+    public List<LeaderboardDTO> obtenerMejoresDelMes() {
+        return flechaRepository.obtenerMejoresArquerosUltimoMes();
+    }
 }

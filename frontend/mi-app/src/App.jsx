@@ -6,6 +6,7 @@ import ArcherDashboard from "./components/ArcherDashboard.jsx";
 import AdminTorneos from "./components/AdminTorneos.jsx";
 import CrearTorneo from "./components/CrearTorneo.jsx";
 import TorneoDetalle from "./components/TorneoDetalle.jsx";
+import Leaderboard from "./components/Leaderboard.jsx";
 
 function App() {
   return (
@@ -46,6 +47,15 @@ function App() {
           element={
             <NavbarLayout>
               <ArcherDashboard />
+            </NavbarLayout>
+          }
+        />
+
+        <Route
+          path="/leaderboard"
+          element={
+            <NavbarLayout>
+              <Leaderboard />
             </NavbarLayout>
           }
         />

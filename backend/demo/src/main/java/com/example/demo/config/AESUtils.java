@@ -11,6 +11,7 @@ import java.util.Base64;
 *           No tiene HTTPS de momento, así que una vez hecho bien el login funcional desde frontend, agregar que se
 *           encripte desde frontend para que viaje encriptado con esta clase y para luego leerlo y guardarlo encriptado
 *           con bcrypt en la BD */
+
 public class AESUtils {
 
     private static final String ALGORITHM = "AES/CBC/PKCS5Padding";

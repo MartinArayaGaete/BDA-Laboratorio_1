@@ -47,6 +47,11 @@ const torneoService = {
     const response = await api.get(`/torneos/${idTorneo}/podio`);
     return response.data;
   },
+
+  obtenerLeaderboardHistorico: async () => {
+    const response = await api.get("/torneos/leaderboard");
+    return response.data;
+  },
 };
 
 export default torneoService;

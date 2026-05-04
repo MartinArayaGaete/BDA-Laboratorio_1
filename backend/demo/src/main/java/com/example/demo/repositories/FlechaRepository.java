@@ -119,4 +119,33 @@ public class FlechaRepository {
             )
         );
     }
+
+    // requerimiento 9: mejores del mes
+    public List<LeaderboardDTO> obtenerMejoresArquerosUltimoMes() {
+        String sql = """
+        SELECT 
+            u.id_usuario, 
+            u.nombre, 
+            COALESCE(AVG(f.puntaje), 0) AS promedio_puntos_flecha,
+            DENSE_RANK() OVER (ORDER BY AVG(f.puntaje) DESC) as posicion
+        FROM usuario u
+        JOIN participacion p ON p.id_usuario = u.id_usuario
+        JOIN torneo t ON p.id_torneo = t.id_torneo
+        JOIN puntaje_ronda pr ON pr.id_participacion = p.id_participacion
+        JOIN flecha f ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+        WHERE t.estado_torneo = 'COMPLETED' 
+          AND t.fecha_termino >= CURRENT_DATE - INTERVAL '1 month'
+        GROUP BY u.id_usuario, u.nombre
+        ORDER BY promedio_puntos_flecha DESC
+        """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+                new LeaderboardDTO(
+                        rs.getLong("id_usuario"),
+                        rs.getString("nombre"),
+                        rs.getDouble("promedio_puntos_flecha"),
+                        rs.getInt("posicion")
+                )
+        );
+    }
 }
