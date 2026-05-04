@@ -40,6 +40,24 @@ public class ParticipacionController {
     }
 
     /**
+     * Desinscribe a un arquero de un torneo.
+     * DELETE /api/participaciones/desinscribir?idTorneo=1&idUsuario=5
+     */
+    @DeleteMapping("/desinscribir")
+    public ResponseEntity<String> desinscribirArquero(
+            @RequestParam Long idTorneo,
+            @RequestParam Long idUsuario) {
+        try {
+            participacionService.desinscribirUsuario(idUsuario, idTorneo);
+            return ResponseEntity.ok("Arquero desinscrito exitosamente");
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
+        }
+    }
+
+    /**
      * Obtiene la lista de inscritos de un torneo específico.
      * GET /api/participaciones/torneo/1
      */

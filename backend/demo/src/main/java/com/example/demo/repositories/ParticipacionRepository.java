@@ -31,6 +31,23 @@ public class ParticipacionRepository {
         return count != null && count > 0;
     }
 
+    public boolean tieneFlechasRegistradasEnTorneo(Long idUsuario, Long idTorneo) {
+        String sql = """
+                SELECT COUNT(*)
+                FROM flecha f
+                INNER JOIN puntaje_ronda pr ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+                INNER JOIN participacion p ON pr.id_participacion = p.id_participacion
+                WHERE p.id_usuario = ? AND p.id_torneo = ?
+                """;
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idUsuario, idTorneo);
+        return count != null && count > 0;
+    }
+
+    public void desinscribirUsuario(Long idUsuario, Long idTorneo) {
+        String sql = "DELETE FROM participacion WHERE id_usuario = ? AND id_torneo = ?";
+        jdbcTemplate.update(sql, idUsuario, idTorneo);
+    }
+
     public List<InscritoDTO> obtenerInscritosPorTorneo(Long idTorneo) {
         String sql = """
                 SELECT p.id_participacion, u.id_usuario, u.rut, u.nombre

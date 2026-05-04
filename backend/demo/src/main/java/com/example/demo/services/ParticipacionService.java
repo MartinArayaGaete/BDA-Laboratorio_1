@@ -44,6 +44,29 @@ public class ParticipacionService {
         participacionRepository.inscribirUsuario(idUsuario, idTorneo);
     }
 
+    @Transactional
+    public void desinscribirUsuario(Long idUsuario, Long idTorneo) {
+        Torneo torneo = torneoRepository.buscarPorId(idTorneo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
+
+        if (!"NOT_STARTED".equals(torneo.getEstadoTorneo())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No se puede desinscribir: el torneo ya inició o finalizo.");
+        }
+
+        if (!participacionRepository.existeParticipacion(idUsuario, idTorneo)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "El arquero no esta inscrito en este torneo.");
+        }
+
+        if (participacionRepository.tieneFlechasRegistradasEnTorneo(idUsuario, idTorneo)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede desinscribir: el arquero ya tiene flechas registradas en este torneo.");
+        }
+
+        participacionRepository.desinscribirUsuario(idUsuario, idTorneo);
+    }
+
     public List<InscritoDTO> obtenerInscritosPorTorneo(Long idTorneo) {
         return participacionRepository.obtenerInscritosPorTorneo(idTorneo);
     }
@@ -62,7 +85,7 @@ public class ParticipacionService {
         return participacionRepository.obtenerTodas();
     }
 
-        public ResumenTorneoArqueroDTO obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
+    public ResumenTorneoArqueroDTO obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
         Map<String, Object> resumen = participacionRepository.obtenerResumenPorTorneoYUsuario(idTorneo, idUsuario)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                 "No se encontró participación para el usuario en este torneo."));
@@ -94,5 +117,5 @@ public class ParticipacionService {
             promedioPuntos,
             rondasJugadas
         );
-        }
+    }
 }
