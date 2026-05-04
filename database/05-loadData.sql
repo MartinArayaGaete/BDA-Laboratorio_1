@@ -18,8 +18,8 @@ INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fe
 (1, 'Copa Apertura', 'IN_COURSE', '2026-02-08', '2026-02-09'),
 (2, 'Open Valle',    'IN_COURSE', '2026-02-22', '2026-02-23'),
 (3, 'Torneo Costa',  'IN_COURSE', '2026-03-15', '2026-03-16'),
-(4, 'Liga Nacional 2026', 'NOT_STARTED', '2027-05-01', '2027-05-30'),
-(5, 'Torneo Novatos 2026', 'NOT_STARTED', '2027-08-10', '2027-08-12');
+(1, 'Liga Nacional 2026', 'NOT_STARTED', '2027-05-01', '2027-05-30'),
+(3, 'Torneo Novatos 2026', 'NOT_STARTED', '2027-08-10', '2027-08-12');
 
 -- 4. PARTICIPACION
 INSERT INTO participacion (id_usuario, id_torneo, puntaje_final, posicion_final) VALUES
