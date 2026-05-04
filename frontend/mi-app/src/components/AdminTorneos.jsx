@@ -32,7 +32,10 @@ function AdminTorneos() {
 
   return (
     <div className="container-fluid py-2">
-      <h2 className="fw-bold mb-4 border-bottom pb-2">📋 Gestión de Torneos</h2>
+      {/* Se agregó la clase 'text-black' aquí abajo */}
+      <h2 className="fw-bold text-black mb-4 border-bottom pb-2">
+        📋 Gestión de Torneos
+      </h2>
 
       {loading ? (
         <div className="alert alert-info">Cargando catálogo de torneos...</div>

@@ -45,23 +45,29 @@ function Leaderboard() {
           </thead>
           <tbody>
             {datos.length > 0 ? (
-              datos.map((arq) => (
-                <tr key={arq.idUsuario}>
-                  <td>
-                    <span
-                      className={`badge ${arq.posicion <= 3 ? "bg-warning text-dark" : "bg-secondary"}`}
-                    >
-                      {arq.posicion}°
-                    </span>
-                  </td>
-                  <td className="fw-bold text-dark">{arq.nombre}</td>
-                  <td className="text-end">
-                    <span className="badge bg-info text-dark fs-6">
-                      {arq.promedioPuntosFlecha.toFixed(2)}
-                    </span>
-                  </td>
-                </tr>
-              ))
+              // Agregamos el 'index' aquí
+              datos.map((arq, index) => {
+                // Calculamos la posición real basada en el índice (0 = 1°, 1 = 2°, etc.)
+                const posicionReal = index + 1;
+
+                return (
+                  <tr key={arq.idUsuario}>
+                    <td>
+                      <span
+                        className={`badge ${posicionReal <= 3 ? "bg-warning text-dark" : "bg-secondary"}`}
+                      >
+                        {posicionReal}°
+                      </span>
+                    </td>
+                    <td className="fw-bold text-dark">{arq.nombre}</td>
+                    <td className="text-end">
+                      <span className="badge bg-info text-dark fs-6">
+                        {arq.promedioPuntosFlecha.toFixed(2)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="3" className="text-center py-4 text-muted">
