@@ -7,10 +7,10 @@ services:
     ports:
       - "${FRONT_PORT:-3000}:3000" # React
     environment:
-      VITE_FRONT_SERVER: "${FRONT_SERVER:-0.0.0.0}"
+      VITE_FRONT_SERVER: "${FRONT_SERVER:-localhost}"
       VITE_FRONT_PORT: "${FRONT_PORT:-3000}"
       VITE_BACK_SERVER: "${BACK_HOST:-0.0.0.0}"
-      VITE_BACK_PORT: "${BACK_PORT:-8084}"
+      VITE_BACK_PORT: "${BACK_PORT:-8100}"
 
       TZ: "${APP_TIMEZONE:-America/Santiago}"
     volumes:
@@ -25,12 +25,8 @@ services:
       dockerfile: Dockerfile
     container_name: backend-archery
     ports:
-      - "${BACK_PORT:-8084}:8080" # Spring Boot
+       - "${BACK_PORT:-8100}:8080"
     environment:
-      BACK_PORT: "${BACK_PORT:-8084}"
-      BACK_HOST: "${BACK_HOST:-0.0.0.0}"
-      FRONT_PORT: "${FRONT_PORT:-3000}"
-      FRONT_HOST: "${FRONT_SERVER:-0.0.0.0}"
       APP_TIMEZONE: "${APP_TIMEZONE:-America/Santiago}"
       TZ: "${APP_TIMEZONE:-America/Santiago}"
       JAVA_TOOL_OPTIONS: "-Duser.timezone=${APP_TIMEZONE:-America/Santiago}"
@@ -39,7 +35,6 @@ services:
       POSTGRES_DB: "${POSTGRES_DB:-archeryDb}"
       POSTGRES_USER: "${POSTGRES_USER:-archeryUser}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-12345}"
-
     volumes:
       - ../backend/demo:/app
     depends_on:
