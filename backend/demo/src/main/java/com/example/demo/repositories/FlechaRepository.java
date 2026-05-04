@@ -106,17 +106,18 @@ public class FlechaRepository {
     /**
      * Método para obtener el Leaderboard Histórico
      * Retorna una lista de LeaderboardDTO con idUsuario, nombre y promedioPuntosFlecha
-     * */ 
+     * */
     public List<LeaderboardDTO> obtenerLeaderboardHistorico() {
-        String sql = "SELECT id_usuario, nombre, promedio_puntos_flecha FROM leaderboard_top_50";
-        
-        return jdbcTemplate.query(sql, (rs, rowNum) -> 
-            new LeaderboardDTO(
-                rs.getLong("id_usuario"),
-                rs.getString("nombre"),
-                rs.getDouble("promedio_puntos_flecha"),
-                rs.getInt("posicion")
-            )
+        // CORRECCIÓN: Agregada la columna "posicion" al inicio del SELECT
+        String sql = "SELECT posicion, id_usuario, nombre, promedio_puntos_flecha FROM leaderboard_top_50";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+                new LeaderboardDTO(
+                        rs.getLong("id_usuario"),
+                        rs.getString("nombre"),
+                        rs.getDouble("promedio_puntos_flecha"),
+                        rs.getInt("posicion")
+                )
         );
     }
 
