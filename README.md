@@ -185,10 +185,18 @@ La aplicación inicia en la pantalla de autenticación. Desde ahí el sistema id
 ### Vista de arquero
 
 El arquero accede a su propio perfil, historial y métricas personales. La navegación está limitada a lo que le corresponde ver.
+Para acceder a la vista de arquero del sistema, se debe usar un perfil pre-hecho en el sistema,
+a modo de ejemplo tenemos las credenciales del siguiente perfil para que pruebes las funcionalidades de este:
+    - Rut: 10000001-K
+    - Contraseña: arco123
 
 ### Vista de administrador
 
 El administrador puede administrar torneos, crear nuevos torneos y revisar el detalle de cada uno para operar sobre rondas, resultados y ranking.
+Para acceder a la vista de administrador del sistema, se debe usar un perfil pre-hecho en el sistema,
+a modo de ejemplo tenemos las credenciales del siguiente perfil para que pruebes las funcionalidades de este:
+    - Rut: 1111111-1
+    - Contraseña: admin123
 
 ### Leaderboard
 
