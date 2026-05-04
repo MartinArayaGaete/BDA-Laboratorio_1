@@ -13,6 +13,7 @@ public class LeaderboardScheduler {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    //Cada minuto al segundo 30 -> @Scheduled(cron = "30 * * * * *", zone = "America/Santiago")
     @Scheduled(cron = "0 0 2 * * *", zone = "America/Santiago")
     public void refreshLeaderboard() {
         jdbcTemplate.execute(
