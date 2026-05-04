@@ -16,8 +16,16 @@ function ArcherDashboard() {
   const [historialCargando, setHistorialCargando] = useState(true);
   const [historialPage, setHistorialPage] = useState(0);
   const [historialTotalPages, setHistorialTotalPages] = useState(0);
-  const [todasLasFlechas, setTodasLasFlechas] = useState([]);
   const [flechasPorTorneo, setFlechasPorTorneo] = useState({});
+  const [estadisticas, setEstadisticas] = useState({
+    torneosTotales: 0,
+    totalFlechas: 0,
+    flechasAcertadas: 0,
+    porcentajeAcierto: 0,
+    totalPuntos: 0,
+    promedioPuntos: 0,
+  });
+  const [estadisticasCargando, setEstadisticasCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
   const [inscribiendoTorneo, setInscribiendoTorneo] = useState(null);
   const [errorInscripcion, setErrorInscripcion] = useState("");
@@ -27,6 +35,268 @@ function ArcherDashboard() {
   const esErrorAuth = (err) => {
     const status = err?.response?.status;
     return status === 401 || status === 403;
+  };
+
+  const cargarTorneos = async (pagina = torneosPage) => {
+    try {
+      setTorneosCargando(true);
+      setErrorCarga("");
+      
+      // Intentar nuevo endpoint
+      try {
+        const resp = await api.get("/torneos/disponibles", {
+          params: {
+            idUsuario: usuario.idUsuario,
+            page: pagina,
+            size: PAGE_SIZE,
+          },
+        });
+
+        const payload = resp.data || {};
+        const disponibles = Array.isArray(payload.content) ? payload.content : [];
+        const totalPages = Number(payload.totalPages || 0);
+
+        setTorneos(disponibles);
+        setTorneosTotalPages(totalPages);
+        return;
+      } catch (err1) {
+        console.warn("Endpoint /torneos/disponibles falló, usando fallback:", err1?.message);
+      }
+
+      // Fallback: legacy endpoint
+      const resp = await api.get("/torneos");
+      const todasLosT = Array.isArray(resp.data) ? resp.data : [];
+      
+      // Filtrar: NOT_STARTED y NO inscrito
+      const disponibles = [];
+      for (const t of todasLosT) {
+        if (t.estadoTorneo === "NOT_STARTED") {
+          try {
+            const inscritos = await api.get(`/participaciones/torneo/${t.idTorneo}`);
+            const participacionesArray = Array.isArray(inscritos.data) ? inscritos.data : [];
+            const yaInscrito = participacionesArray.some(p => p.idUsuario === usuario.idUsuario);
+            if (!yaInscrito) {
+              disponibles.push(t);
+            }
+          } catch (err) {
+            // Si no se puede verificar inscripción, incluirlo igualmente
+            disponibles.push(t);
+          }
+        }
+      }
+
+      // Paginar en frontend (fallback)
+      const inicio = pagina * PAGE_SIZE;
+      const fin = inicio + PAGE_SIZE;
+      const paginados = disponibles.slice(inicio, fin);
+      const totalPages = Math.ceil(disponibles.length / PAGE_SIZE);
+
+      setTorneos(paginados);
+      setTorneosTotalPages(totalPages);
+    } catch (err) {
+      console.error("Error traer torneos (legacy fallback también falló):", err);
+      setErrorCarga("No se pudieron cargar los torneos. Revisa tu sesión o backend.");
+      setTorneos([]);
+      setTorneosTotalPages(0);
+    } finally {
+      setTorneosCargando(false);
+    }
+  };
+
+  const cargarHistorial = async (pagina = historialPage) => {
+    try {
+      setHistorialCargando(true);
+      setErrorCarga("");
+
+      // Intentar nuevo endpoint
+      try {
+        const resp = await api.get(`/arqueros/${usuario.idUsuario}/historial`, {
+          params: {
+            page: pagina,
+            size: PAGE_SIZE,
+          },
+        });
+
+        const payload = resp.data || {};
+        const torneosPagina = Array.isArray(payload.torneos) ? payload.torneos : [];
+        const totalPages = Number(payload.totalPages || 0);
+
+        const torneosVisible = Array.isArray(torneosPagina) ? torneosPagina : [];
+        const flechasPorTorneoLocal = {};
+
+        torneosVisible.forEach((torneo) => {
+          const rondas = Array.isArray(torneo.rondas) ? torneo.rondas : [];
+          const flechasDelTorneo = [];
+
+          rondas.forEach((ronda) => {
+            const numeroRonda = ronda?.numeroRonda;
+            const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
+
+            flechasRonda.forEach((flecha) => {
+              flechasDelTorneo.push({ ...flecha, numeroRonda });
+            });
+          });
+
+          flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
+        });
+
+        setHistorial(torneosVisible);
+        setHistorialTotalPages(totalPages);
+        setFlechasPorTorneo(flechasPorTorneoLocal);
+        return;
+      } catch (err1) {
+        console.warn("Endpoint /arqueros/{id}/historial falló, usando fallback:", err1?.message);
+      }
+
+      // Fallback: legacy endpoint
+      const resp = await api.get("/torneos");
+      const todasLosTorneos = Array.isArray(resp.data) ? resp.data : [];
+
+      const historialTemp = [];
+      for (const torneo of todasLosTorneos) {
+        try {
+          const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
+          const participacionesArray = Array.isArray(inscritos.data) ? inscritos.data : [];
+          const inscrito = participacionesArray.find(p => p.idUsuario === usuario.idUsuario);
+          
+          if (inscrito) {
+            try {
+              const flechasResp = await api.get(`/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`);
+              const flechas = Array.isArray(flechasResp.data) ? flechasResp.data : [];
+              
+              // Calcular puntaje y posición
+              const puntajeFinal = flechas.reduce((sum, f) => sum + (f.puntaje || 0), 0);
+              
+              // Para posición, obtener todos los inscritos
+              const allFlechas = [];
+              for (const part of participacionesArray) {
+                try {
+                  const fResp = await api.get(`/torneos/${torneo.idTorneo}/arqueros/${part.idUsuario}/flechas`);
+                  const fs = Array.isArray(fResp.data) ? fResp.data : [];
+                  allFlechas.push({
+                    idUsuario: part.idUsuario,
+                    puntaje: fs.reduce((sum, f) => sum + (f.puntaje || 0), 0),
+                  });
+                } catch (e) {
+                  // ignorar
+                }
+              }
+
+              const posicionFinal = allFlechas.filter(x => x.puntaje > puntajeFinal).length + 1;
+
+              historialTemp.push({
+                ...torneo,
+                puntajeFinal,
+                posicionFinal,
+              });
+            } catch (e) {
+              // Si falla obtener flechas, incluir sin ellas
+              historialTemp.push({
+                ...torneo,
+                puntajeFinal: 0,
+                posicionFinal: 0,
+              });
+            }
+          }
+        } catch (e) {
+          // ignorar
+        }
+      }
+
+      // Paginar en frontend
+      const inicio = pagina * PAGE_SIZE;
+      const fin = inicio + PAGE_SIZE;
+      const paginados = historialTemp.slice(inicio, fin);
+      const totalPages = Math.ceil(historialTemp.length / PAGE_SIZE);
+
+      setHistorial(paginados);
+      setHistorialTotalPages(totalPages);
+    } catch (err) {
+      console.error("Error traer historial (fallback también falló):", err);
+      setErrorCarga("No se pudo cargar el historial. Revisa tu sesión o backend.");
+      setHistorial([]);
+      setHistorialTotalPages(0);
+      setFlechasPorTorneo({});
+    } finally {
+      setHistorialCargando(false);
+    }
+  };
+
+  const cargarEstadisticas = async () => {
+    try {
+      setEstadisticasCargando(true);
+
+      // Intentar nuevo endpoint
+      try {
+        const resp = await api.get(`/arqueros/${usuario.idUsuario}/estadisticas`);
+        setEstadisticas(resp.data || {});
+        setEstadisticasCargando(false);
+        return;
+      } catch (err1) {
+        console.warn("Endpoint /arqueros/{id}/estadisticas falló, calculando desde historial:", err1?.message);
+      }
+
+      // Fallback: calcular a partir de historial y flechas
+      let totalTorneos = 0;
+      let totalFlechas = 0;
+      let flechasAcertadas = 0;
+      let totalPuntos = 0;
+
+      try {
+        const resp = await api.get("/torneos");
+        const todasLosTorneos = Array.isArray(resp.data) ? resp.data : [];
+
+        for (const torneo of todasLosTorneos) {
+          try {
+            const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
+            const participacionesArray = Array.isArray(inscritos.data) ? inscritos.data : [];
+            const inscrito = participacionesArray.find(p => p.idUsuario === usuario.idUsuario);
+            
+            if (inscrito) {
+              totalTorneos += 1;
+              try {
+                const flechasResp = await api.get(`/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`);
+                const flechas = Array.isArray(flechasResp.data) ? flechasResp.data : [];
+                
+                totalFlechas += flechas.length;
+                flechasAcertadas += flechas.filter(f => (f.puntaje || 0) > 0).length;
+                totalPuntos += flechas.reduce((sum, f) => sum + (f.puntaje || 0), 0);
+              } catch (e) {
+                // ignorar si no hay flechas
+              }
+            }
+          } catch (e) {
+            // ignorar
+          }
+        }
+      } catch (err) {
+        console.error("Error calculando estadísticas:", err);
+      }
+
+      const porcentajeAcierto = totalFlechas > 0 ? Math.round((flechasAcertadas / totalFlechas) * 100) : 0;
+      const promedioPuntos = totalTorneos > 0 ? Math.round(totalPuntos / totalTorneos) : 0;
+
+      setEstadisticas({
+        torneosTotales: totalTorneos,
+        totalFlechas,
+        flechasAcertadas,
+        porcentajeAcierto,
+        totalPuntos,
+        promedioPuntos,
+      });
+    } catch (err) {
+      console.error("Error traer estadisticas (fallback también falló):", err);
+      setEstadisticas({
+        torneosTotales: 0,
+        totalFlechas: 0,
+        flechasAcertadas: 0,
+        porcentajeAcierto: 0,
+        totalPuntos: 0,
+        promedioPuntos: 0,
+      });
+    } finally {
+      setEstadisticasCargando(false);
+    }
   };
 
   useEffect(() => {
@@ -46,268 +316,18 @@ function ArcherDashboard() {
 
   useEffect(() => {
     if (!usuario) return;
-
-    const fetchTorneos = async () => {
-      const fetchTorneosLegacy = async () => {
-        const respAll = await api.get("/torneos");
-        const todos = Array.isArray(respAll.data) ? respAll.data : [];
-        const estadosDisponibles = new Set(["NOT_STARTED", "CREADO", "OPEN", "PENDING"]);
-
-        const candidatos = todos.filter((t) =>
-          estadosDisponibles.has((t?.estadoTorneo || "").toUpperCase())
-        );
-
-        const filtrados = [];
-        for (const torneo of candidatos) {
-          try {
-            const inscritosResp = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
-            const inscritos = Array.isArray(inscritosResp.data) ? inscritosResp.data : [];
-            const yaInscrito = inscritos.some((i) => i.idUsuario === usuario.idUsuario);
-            if (!yaInscrito) filtrados.push(torneo);
-          } catch (errorInscritos) {
-            filtrados.push(torneo);
-          }
-        }
-
-        const totalPages = Math.ceil(filtrados.length / PAGE_SIZE);
-        const inicio = torneosPage * PAGE_SIZE;
-        const pagina = filtrados.slice(inicio, inicio + PAGE_SIZE);
-        setTorneos(pagina);
-        setTorneosTotalPages(totalPages);
-      };
-
-      try {
-        setTorneosCargando(true);
-        setErrorCarga("");
-        const resp = await api.get("/torneos/disponibles", {
-          params: {
-            idUsuario: usuario.idUsuario,
-            page: torneosPage,
-            size: PAGE_SIZE,
-          },
-        });
-
-        const payload = resp.data || {};
-        let disponibles = Array.isArray(payload.content) ? payload.content : [];
-        let totalPages = Number(payload.totalPages || 0);
-
-        // Fallback: algunos seeds usan estado CREADO y no NOT_STARTED.
-        if (disponibles.length === 0 && torneosPage === 0) {
-          await fetchTorneosLegacy();
-          return;
-        }
-
-        setTorneos(disponibles);
-        setTorneosTotalPages(totalPages);
-      } catch (err) {
-        if (esErrorAuth(err) || err?.response?.status >= 500) {
-          try {
-            await fetchTorneosLegacy();
-            return;
-          } catch (legacyErr) {
-            if (esErrorAuth(err)) {
-              setErrorCarga("Tu sesión no está autorizada para consultar torneos. Vuelve a iniciar sesión.");
-            } else {
-              setErrorCarga("No se pudieron cargar los torneos con la ruta optimizada ni con el fallback.");
-            }
-            setTorneos([]);
-            setTorneosTotalPages(0);
-            return;
-          }
-        }
-        if (err?.response?.status === 400 && torneosPage > 0) {
-          setTorneosPage(0);
-          return;
-        }
-        console.error("Error traer torneos:", err);
-        setErrorCarga("No se pudieron cargar los torneos. Revisa tu sesión o backend.");
-        setTorneos([]);
-        setTorneosTotalPages(0);
-      } finally {
-        setTorneosCargando(false);
-      }
-    };
-
-    fetchTorneos();
+    cargarTorneos();
   }, [usuario, torneosPage]);
 
   useEffect(() => {
     if (!usuario) return;
-
-    const fetchHistorialReal = async () => {
-      const fetchHistorialLegacy = async () => {
-        const allTorneos = await api.get("/torneos");
-        const torneosList = Array.isArray(allTorneos.data) ? allTorneos.data : [];
-        const participacionesDelUsuario = [];
-        const flechasTodas = [];
-        const flechasPorTorneoLocal = {};
-
-        for (const torneo of torneosList) {
-          try {
-            const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
-            const inscritosDelTorneo = Array.isArray(inscritos.data) ? inscritos.data : [];
-            const estaInscrito = inscritosDelTorneo.some(
-              (inscrito) => inscrito.idUsuario === usuario.idUsuario
-            );
-
-            if (!estaInscrito) continue;
-
-            let puntajeFinal = 0;
-            let posicionFinal = "-";
-            let flechasDelTorneo = [];
-
-            try {
-              const flechasResp = await api.get(
-                `/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`
-              );
-              flechasDelTorneo = Array.isArray(flechasResp.data) ? flechasResp.data : [];
-              puntajeFinal = flechasDelTorneo.reduce((sum, flecha) => sum + (flecha.puntaje || 0), 0);
-              flechasTodas.push(...flechasDelTorneo);
-              flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
-            } catch (errorFlechas) {
-              flechasPorTorneoLocal[torneo.idTorneo] = [];
-            }
-
-            const rankingDelTorneo = [];
-            for (const inscrito of inscritosDelTorneo) {
-              try {
-                const flechasDelInscrito = await api.get(
-                  `/torneos/${torneo.idTorneo}/arqueros/${inscrito.idUsuario}/flechas`
-                );
-                const puntajeDelInscrito = (flechasDelInscrito.data || []).reduce(
-                  (sum, flecha) => sum + (flecha.puntaje || 0),
-                  0
-                );
-                rankingDelTorneo.push({ idUsuario: inscrito.idUsuario, puntaje: puntajeDelInscrito });
-              } catch (errorRanking) {
-                rankingDelTorneo.push({ idUsuario: inscrito.idUsuario, puntaje: 0 });
-              }
-            }
-
-            rankingDelTorneo.sort((a, b) => b.puntaje - a.puntaje);
-            const posicionUsuario =
-              rankingDelTorneo.findIndex((item) => item.idUsuario === usuario.idUsuario) + 1;
-            posicionFinal = posicionUsuario > 0 ? posicionUsuario : "-";
-
-            participacionesDelUsuario.push({
-              idTorneo: torneo.idTorneo,
-              nombreTorneo: torneo.nombreTorneo,
-              puntajeFinal,
-              posicionFinal,
-              fechaInicio: torneo.fechaInicio,
-              estadoTorneo: torneo.estadoTorneo,
-              rondas: [],
-            });
-          } catch (errorInscritos) {
-            // Ignorar torneos que no se puedan consultar
-          }
-        }
-
-        const totalPages = Math.ceil(participacionesDelUsuario.length / PAGE_SIZE);
-        const inicio = historialPage * PAGE_SIZE;
-        const pagina = participacionesDelUsuario.slice(inicio, inicio + PAGE_SIZE);
-
-        setHistorial(pagina);
-        setHistorialTotalPages(totalPages);
-        setTodasLasFlechas(flechasTodas);
-        setFlechasPorTorneo(flechasPorTorneoLocal);
-      };
-
-      try {
-        setHistorialCargando(true);
-        setErrorCarga("");
-        const resp = await api.get(`/arqueros/${usuario.idUsuario}/historial`, {
-          params: {
-            page: historialPage,
-            size: PAGE_SIZE,
-          },
-        });
-
-        const payload = resp.data || {};
-        const torneosHistorial = Array.isArray(payload.torneos) ? payload.torneos : [];
-
-        const flechasPorTorneoLocal = {};
-        const flechas = [];
-
-        torneosHistorial.forEach((torneo) => {
-          const rondas = Array.isArray(torneo.rondas) ? torneo.rondas : [];
-          const flechasDelTorneo = [];
-
-          rondas.forEach((ronda) => {
-            const numeroRonda = ronda?.numeroRonda;
-            const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
-
-            flechasRonda.forEach((flecha) => {
-              const flechaConRonda = {
-                ...flecha,
-                numeroRonda,
-              };
-              flechasDelTorneo.push(flechaConRonda);
-              flechas.push(flechaConRonda);
-            });
-          });
-
-          flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
-        });
-
-        setHistorial(torneosHistorial);
-        setHistorialTotalPages(Number(payload.totalPages || 0));
-        setTodasLasFlechas(flechas);
-        setFlechasPorTorneo(flechasPorTorneoLocal);
-      } catch (err) {
-        if (esErrorAuth(err) || err?.response?.status >= 500) {
-          try {
-            await fetchHistorialLegacy();
-            return;
-          } catch (legacyErr) {
-            if (esErrorAuth(err)) {
-              setErrorCarga("Tu sesión no está autorizada para consultar historial. Vuelve a iniciar sesión.");
-            } else {
-              setErrorCarga("No se pudo cargar el historial con la ruta optimizada ni con el fallback.");
-            }
-            setHistorial([]);
-            setHistorialTotalPages(0);
-            setTodasLasFlechas([]);
-            setFlechasPorTorneo({});
-            return;
-          }
-        }
-        console.error("Error traer historial:", err);
-        setErrorCarga("No se pudo cargar el historial. Revisa tu sesión o backend.");
-        setHistorial([]);
-        setHistorialTotalPages(0);
-        setTodasLasFlechas([]);
-        setFlechasPorTorneo({});
-      } finally {
-        setHistorialCargando(false);
-      }
-    };
-
-    fetchHistorialReal();
+    cargarHistorial();
   }, [usuario, historialPage]);
 
-  const calcularEstadisticas = () => {
-    const totalFlechas = todasLasFlechas.length;
-    const flechasAcertadas = todasLasFlechas.filter((f) => (f.puntaje || 0) > 0).length;
-    const porcentajeAcierto =
-      totalFlechas > 0 ? Math.round((flechasAcertadas / totalFlechas) * 100) : 0;
-    const totalPuntos = todasLasFlechas.reduce((sum, f) => sum + (f.puntaje || 0), 0);
-    const promedioPuntos = totalFlechas > 0 ? (totalPuntos / totalFlechas).toFixed(1) : 0;
-
-    return {
-      torneosTotales: historial.length,
-      totalFlechas,
-      flechasAcertadas,
-      porcentajeAcierto,
-      promedioPuntos,
-      totalPuntos,
-    };
-  };
-
-  // Detecta si el usuario ya está inscrito en un torneo
-  const estaInscrito = (idTorneo) => {
-    return historial.some((h) => h.idTorneo === idTorneo);
-  };
+  useEffect(() => {
+    if (!usuario) return;
+    cargarEstadisticas();
+  }, [usuario]);
 
   // Maneja la inscripción a un torneo
   const handleInscribirse = async (torneo) => {
@@ -316,12 +336,6 @@ function ArcherDashboard() {
     // Validaciones
     if (torneo.estadoTorneo !== "NOT_STARTED") {
       setErrorInscripcion(`El torneo debe estar en estado NOT_STARTED para inscribirse.`);
-      setTimeout(() => setErrorInscripcion(""), 3000);
-      return;
-    }
-
-    if (estaInscrito(torneo.idTorneo)) {
-      setErrorInscripcion(`Ya estás inscrito en este torneo.`);
       setTimeout(() => setErrorInscripcion(""), 3000);
       return;
     }
@@ -338,19 +352,7 @@ function ArcherDashboard() {
       });
 
       if (response.status === 201 || response.status === 200) {
-        // Agregar el torneo al historial localmente
-        setHistorial([
-          ...historial,
-          {
-            idTorneo: torneo.idTorneo,
-            nombreTorneo: torneo.nombreTorneo,
-            puntajeFinal: 0,
-            posicionFinal: "-",
-            fechaInicio: torneo.fechaInicio,
-            estadoTorneo: torneo.estadoTorneo,
-            rondas: [],
-          },
-        ]);
+        await Promise.all([cargarTorneos(torneosPage), cargarHistorial(historialPage), cargarEstadisticas()]);
         setInscribiendoTorneo(null);
       }
     } catch (err) {
@@ -400,8 +402,7 @@ function ArcherDashboard() {
       });
 
       if (response.status === 200) {
-        // Eliminar el torneo del historial localmente
-        setHistorial(historial.filter((h) => h.idTorneo !== torneo.idTorneo));
+        await Promise.all([cargarTorneos(torneosPage), cargarHistorial(historialPage), cargarEstadisticas()]);
         setDesinscribiendoTorneo(null);
       }
     } catch (err) {
@@ -415,13 +416,10 @@ function ArcherDashboard() {
     }
   };
 
-  const stats = calcularEstadisticas();
-
   const torneosArray = Array.isArray(torneos) ? torneos : [];
   const historialArray = Array.isArray(historial) ? historial : [];
   const puntosMaximos = Math.max(...historialArray.map((item) => item.puntajeFinal || 0), 1);
-  const porcentajeAcierto =
-    stats.totalFlechas > 0 ? Math.round((stats.flechasAcertadas / stats.totalFlechas) * 100) : 0;
+  const stats = estadisticas || {};
 
   const torneosDisponibles = torneosArray;
   const torneosPaginados = torneosDisponibles;
@@ -450,7 +448,7 @@ function ArcherDashboard() {
           }}
         />
         <div className="position-absolute top-50 start-50 translate-middle text-center bg-white rounded-circle d-flex flex-column justify-content-center align-items-center border" style={{ width: 110, height: 110 }}>
-          <strong className="fs-4">{porcentajeAcierto}%</strong>
+          <strong className="fs-4">{stats.porcentajeAcierto}%</strong>
           <small className="text-muted">acierto</small>
         </div>
       </div>
@@ -467,7 +465,7 @@ function ArcherDashboard() {
 
   return (
     <div className="container-fluid py-4 px-4">
-      <h1>Mi Perfil de Arquero</h1>
+      <h1 style={{ color: "#333" }}>Mi Perfil de Arquero</h1>
       {usuario && <p className="text-muted">{usuario.nombre} (ID: {usuario.idUsuario})</p>}
       {errorCarga && <div className="alert alert-danger">{errorCarga}</div>}
 
@@ -699,7 +697,7 @@ function ArcherDashboard() {
                           </span>
                         </div>
                       </div>
-                      {t.estadoTorneo === "NOT_STARTED" && !estaInscrito(t.idTorneo) && (
+                      {t.estadoTorneo === "NOT_STARTED" && (
                         <button
                           className="btn btn-sm btn-primary"
                           onClick={() => handleInscribirse(t)}
@@ -707,9 +705,6 @@ function ArcherDashboard() {
                         >
                           {inscribiendoTorneo === t.idTorneo ? "Inscribiendo..." : "Inscribirme"}
                         </button>
-                      )}
-                      {estaInscrito(t.idTorneo) && (
-                        <span className="badge bg-info text-dark">Ya inscrito</span>
                       )}
                     </div>
                   </div>
@@ -739,7 +734,7 @@ function ArcherDashboard() {
       <section className="mb-5">
         <h5 className="mb-3">Mis Flechas</h5>
         <div className="alert alert-secondary">
-          Total de flechas cargadas: {todasLasFlechas.length}
+          Total de flechas cargadas: {stats.totalFlechas}
         </div>
       </section>
     </div>
