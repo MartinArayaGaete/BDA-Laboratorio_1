@@ -78,7 +78,8 @@ AS $$
 DECLARE
     v_estado_torneo torneo.estado_torneo%TYPE;
 BEGIN
-    -- Verificar que el torneo existe
+
+    -- verificar torneo
     SELECT t.estado_torneo
     INTO v_estado_torneo
     FROM torneo t
@@ -88,19 +89,19 @@ BEGIN
         RAISE EXCEPTION 'El torneo no existe.';
     END IF;
 
-    -- Verificar que el torneo ha finalizado
     IF v_estado_torneo <> 'COMPLETED' THEN
         RAISE EXCEPTION 'El torneo no ha finalizado.';
     END IF;
 
-    -- Actualizar posiciones finales
+    -- actualizar ranking
     UPDATE participacion p
     SET posicion_final = ranking.posicion
     FROM (
         SELECT 
             id_participacion,
             DENSE_RANK() OVER (
-                ORDER BY puntaje_final DESC
+                ORDER BY COALESCE(puntaje_final, 0) DESC,
+                         id_participacion ASC
             ) AS posicion
         FROM participacion
         WHERE id_torneo = p_id_torneo

@@ -120,5 +120,5 @@ BEGIN
 
 END $$;
 
--- 7. Actualizar la vista materializada
-REFRESH MATERIALIZED VIEW leaderboard_top_50;
+-- 7. Actualizar la vista materializada para que refleje los nuevos datos inmediatamente
+REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_top_50;
