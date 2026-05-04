@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.HistorialArqueroResponse;
+import com.example.demo.dtos.EstadisticasArqueroDTO;
 import com.example.demo.dtos.HistorialFlechaDTO;
 import com.example.demo.dtos.HistorialRondaDTO;
 import com.example.demo.dtos.HistorialTorneoDTO;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.sql.Date;
 import java.util.*;
 
 @Service
@@ -68,13 +70,13 @@ public class HistorialService {
         // Armar la estructura de torneos con rondas y flechas
         List<HistorialTorneoDTO> torneos = new ArrayList<>();
         for (Map<String, Object> participacion : participacionesData) {
-            Long idParticipacion = ((Number) participacion.get("id_participacion")).longValue();
-            Long idTorneo = ((Number) participacion.get("id_torneo")).longValue();
-            String nombreTorneo = (String) participacion.get("nombre_torneo");
-            Integer puntajeFinal = (Integer) participacion.get("puntaje_final");
-            Integer posicionFinal = (Integer) participacion.get("posicion_final");
-            LocalDate fechaInicio = (LocalDate) participacion.get("fecha_inicio");
-            String estadoTorneo = (String) participacion.get("estado_torneo");
+            Long idParticipacion = asLong(participacion.get("id_participacion"));
+            Long idTorneo = asLong(participacion.get("id_torneo"));
+            String nombreTorneo = asString(participacion.get("nombre_torneo"));
+            Integer puntajeFinal = asInteger(participacion.get("puntaje_final"));
+            Integer posicionFinal = asInteger(participacion.get("posicion_final"));
+            LocalDate fechaInicio = asLocalDate(participacion.get("fecha_inicio"));
+            String estadoTorneo = asString(participacion.get("estado_torneo"));
 
             // Obtener rondas con puntajes para esta participación
             List<Map<String, Object>> rondasData = rondaRepository.obtenerRondasConPuntajesPorParticipacion(idParticipacion, idTorneo);
@@ -82,9 +84,9 @@ public class HistorialService {
             // Armar la estructura de rondas con flechas
             List<HistorialRondaDTO> rondas = new ArrayList<>();
             for (Map<String, Object> ronda : rondasData) {
-                Long idRonda = ((Number) ronda.get("id_ronda")).longValue();
-                Integer numeroRonda = ((Number) ronda.get("numero_ronda")).intValue();
-                Integer puntajeRonda = ((Number) ronda.get("puntaje_ronda")).intValue();
+                Long idRonda = asLong(ronda.get("id_ronda"));
+                Integer numeroRonda = asInteger(ronda.get("numero_ronda"));
+                Integer puntajeRonda = asInteger(ronda.get("puntaje_ronda"));
 
                 // Obtener flechas de esta ronda
                 List<Map<String, Object>> flechasData = flechaRepository.obtenerFlechasPorRonda(idParticipacion, idRonda);
@@ -92,8 +94,8 @@ public class HistorialService {
                 // Armar la estructura de flechas
                 List<HistorialFlechaDTO> flechas = new ArrayList<>();
                 for (Map<String, Object> flecha : flechasData) {
-                    Long idFlecha = ((Number) flecha.get("id_flecha")).longValue();
-                    Integer puntajeFlecha = ((Number) flecha.get("puntaje")).intValue();
+                    Long idFlecha = asLong(flecha.get("id_flecha"));
+                    Integer puntajeFlecha = asInteger(flecha.get("puntaje"));
 
                     flechas.add(new HistorialFlechaDTO(idFlecha, puntajeFlecha));
                 }
@@ -121,5 +123,57 @@ public class HistorialService {
                 totalElements,
                 totalPages
         );
+    }
+
+    public EstadisticasArqueroDTO obtenerEstadisticasArquero(Long idUsuario) {
+        Map<String, Object> stats = participacionRepository.obtenerEstadisticasArquero(idUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontraron participaciones para el usuario"));
+
+        Integer torneosTotales = asInteger(stats.get("torneos_totales"));
+        Integer totalFlechas = asInteger(stats.get("total_flechas"));
+        Integer flechasAcertadas = asInteger(stats.get("flechas_acertadas"));
+        Integer totalPuntos = asInteger(stats.get("total_puntos"));
+        Double promedioPuntos = asDouble(stats.get("promedio_puntos"));
+        Integer porcentajeAcierto = totalFlechas > 0
+                ? (int) Math.round((flechasAcertadas * 100.0) / totalFlechas)
+                : 0;
+
+        return new EstadisticasArqueroDTO(
+                torneosTotales,
+                totalFlechas,
+                flechasAcertadas,
+                porcentajeAcierto,
+                totalPuntos,
+                promedioPuntos
+        );
+    }
+
+    private Long asLong(Object value) {
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private Integer asInteger(Object value) {
+        return value == null ? null : ((Number) value).intValue();
+    }
+
+    private Double asDouble(Object value) {
+        return value == null ? null : ((Number) value).doubleValue();
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    private LocalDate asLocalDate(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDate localDate) {
+            return localDate;
+        }
+        if (value instanceof Date sqlDate) {
+            return sqlDate.toLocalDate();
+        }
+        return LocalDate.parse(value.toString());
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,13 +61,13 @@ public class TorneosDisponiblesService {
         // Convertir Maps a DTOs
         List<TorneoDisponibleDTO> torneos = new ArrayList<>();
         for (Map<String, Object> torneo : torneosData) {
-            Long idTorneo = ((Number) torneo.get("id_torneo")).longValue();
-            String nombreTorneo = (String) torneo.get("nombre_torneo");
-            String estadoTorneo = (String) torneo.get("estado_torneo");
-            LocalDate fechaInicio = (LocalDate) torneo.get("fecha_inicio");
-            LocalDate fechaTermino = (LocalDate) torneo.get("fecha_termino");
-            Long idCategoria = ((Number) torneo.get("id_categoria")).longValue();
-            String nombreCategoria = (String) torneo.get("nombre_categoria");
+            Long idTorneo = asLong(torneo.get("id_torneo"));
+            String nombreTorneo = asString(torneo.get("nombre_torneo"));
+            String estadoTorneo = asString(torneo.get("estado_torneo"));
+            LocalDate fechaInicio = asLocalDate(torneo.get("fecha_inicio"));
+            LocalDate fechaTermino = asLocalDate(torneo.get("fecha_termino"));
+            Long idCategoria = asLong(torneo.get("id_categoria"));
+            String nombreCategoria = asString(torneo.get("nombre_categoria"));
 
             TorneoDisponibleDTO dto = new TorneoDisponibleDTO(
                     idTorneo,
@@ -87,5 +88,26 @@ public class TorneosDisponiblesService {
                 totalElements,
                 totalPages
         );
+    }
+
+    private Long asLong(Object value) {
+        return value == null ? null : ((Number) value).longValue();
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    private LocalDate asLocalDate(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDate localDate) {
+            return localDate;
+        }
+        if (value instanceof Date sqlDate) {
+            return sqlDate.toLocalDate();
+        }
+        return LocalDate.parse(value.toString());
     }
 }

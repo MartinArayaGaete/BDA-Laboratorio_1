@@ -145,6 +145,30 @@ public class ParticipacionRepository {
     }
 
     /**
+     * Obtiene estadisticas agregadas del arquero en una sola consulta.
+     */
+    public Optional<Map<String, Object>> obtenerEstadisticasArquero(Long idUsuario) {
+        String sql = """
+            SELECT
+                COUNT(DISTINCT p.id_torneo) AS torneos_totales,
+                COUNT(f.id_flecha) AS total_flechas,
+                COALESCE(SUM(CASE WHEN f.puntaje > 0 THEN 1 ELSE 0 END), 0) AS flechas_acertadas,
+                COALESCE(SUM(COALESCE(f.puntaje, 0)), 0) AS total_puntos,
+                COALESCE(AVG(f.puntaje), 0) AS promedio_puntos
+            FROM participacion p
+            LEFT JOIN puntaje_ronda pr ON pr.id_participacion = p.id_participacion
+            LEFT JOIN flecha f ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+            WHERE p.id_usuario = ?
+            """;
+
+        List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, idUsuario);
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.get(0));
+    }
+
+    /**
      * Obtiene un resumen agregado por torneo y arquero en una sola consulta.
      * Retorna keys: puntaje_final, posicion_final, total_flechas, promedio_puntos, rondas_jugadas
      */

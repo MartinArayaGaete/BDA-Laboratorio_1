@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.dtos.EstadisticasArqueroDTO;
 import com.example.demo.dtos.HistorialArqueroResponse;
 import com.example.demo.services.HistorialService;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,21 @@ public class ArquerosController {
         try {
             HistorialArqueroResponse respuesta = historialService.obtenerHistorialArquero(idUsuario, page, size);
             return ResponseEntity.ok(respuesta);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Obtiene estadisticas agregadas del arquero.
+     * GET /api/arqueros/{idUsuario}/estadisticas
+     */
+    @GetMapping("/{idUsuario}/estadisticas")
+    public ResponseEntity<EstadisticasArqueroDTO> obtenerEstadisticas(@PathVariable Long idUsuario) {
+        try {
+            return ResponseEntity.ok(historialService.obtenerEstadisticasArquero(idUsuario));
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
