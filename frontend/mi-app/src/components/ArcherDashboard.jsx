@@ -19,6 +19,10 @@ function ArcherDashboard() {
   const [todasLasFlechas, setTodasLasFlechas] = useState([]);
   const [flechasPorTorneo, setFlechasPorTorneo] = useState({});
   const [errorCarga, setErrorCarga] = useState("");
+  const [inscribiendoTorneo, setInscribiendoTorneo] = useState(null);
+  const [errorInscripcion, setErrorInscripcion] = useState("");
+  const [desinscribiendoTorneo, setDesinscribiendoTorneo] = useState(null);
+  const [errorDesinscripcion, setErrorDesinscripcion] = useState("");
 
   const esErrorAuth = (err) => {
     const status = err?.response?.status;
@@ -47,29 +51,18 @@ function ArcherDashboard() {
       const fetchTorneosLegacy = async () => {
         const respAll = await api.get("/torneos");
         const todos = Array.isArray(respAll.data) ? respAll.data : [];
-        const estadosDisponibles = new Set([
-          "NOT_STARTED",
-          "CREADO",
-          "OPEN",
-          "PENDING",
-        ]);
+        const estadosDisponibles = new Set(["NOT_STARTED", "CREADO", "OPEN", "PENDING"]);
 
         const candidatos = todos.filter((t) =>
-          estadosDisponibles.has((t?.estadoTorneo || "").toUpperCase()),
+          estadosDisponibles.has((t?.estadoTorneo || "").toUpperCase())
         );
 
         const filtrados = [];
         for (const torneo of candidatos) {
           try {
-            const inscritosResp = await api.get(
-              `/participaciones/torneo/${torneo.idTorneo}`,
-            );
-            const inscritos = Array.isArray(inscritosResp.data)
-              ? inscritosResp.data
-              : [];
-            const yaInscrito = inscritos.some(
-              (i) => i.idUsuario === usuario.idUsuario,
-            );
+            const inscritosResp = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
+            const inscritos = Array.isArray(inscritosResp.data) ? inscritosResp.data : [];
+            const yaInscrito = inscritos.some((i) => i.idUsuario === usuario.idUsuario);
             if (!yaInscrito) filtrados.push(torneo);
           } catch (errorInscritos) {
             filtrados.push(torneo);
@@ -107,14 +100,16 @@ function ArcherDashboard() {
         setTorneos(disponibles);
         setTorneosTotalPages(totalPages);
       } catch (err) {
-        if (esErrorAuth(err)) {
+        if (esErrorAuth(err) || err?.response?.status >= 500) {
           try {
             await fetchTorneosLegacy();
             return;
           } catch (legacyErr) {
-            setErrorCarga(
-              "Tu sesión no está autorizada para consultar torneos. Vuelve a iniciar sesión.",
-            );
+            if (esErrorAuth(err)) {
+              setErrorCarga("Tu sesión no está autorizada para consultar torneos. Vuelve a iniciar sesión.");
+            } else {
+              setErrorCarga("No se pudieron cargar los torneos con la ruta optimizada ni con el fallback.");
+            }
             setTorneos([]);
             setTorneosTotalPages(0);
             return;
@@ -125,9 +120,7 @@ function ArcherDashboard() {
           return;
         }
         console.error("Error traer torneos:", err);
-        setErrorCarga(
-          "No se pudieron cargar los torneos. Revisa tu sesión o backend.",
-        );
+        setErrorCarga("No se pudieron cargar los torneos. Revisa tu sesión o backend.");
         setTorneos([]);
         setTorneosTotalPages(0);
       } finally {
@@ -144,23 +137,17 @@ function ArcherDashboard() {
     const fetchHistorialReal = async () => {
       const fetchHistorialLegacy = async () => {
         const allTorneos = await api.get("/torneos");
-        const torneosList = Array.isArray(allTorneos.data)
-          ? allTorneos.data
-          : [];
+        const torneosList = Array.isArray(allTorneos.data) ? allTorneos.data : [];
         const participacionesDelUsuario = [];
         const flechasTodas = [];
         const flechasPorTorneoLocal = {};
 
         for (const torneo of torneosList) {
           try {
-            const inscritos = await api.get(
-              `/participaciones/torneo/${torneo.idTorneo}`,
-            );
-            const inscritosDelTorneo = Array.isArray(inscritos.data)
-              ? inscritos.data
-              : [];
+            const inscritos = await api.get(`/participaciones/torneo/${torneo.idTorneo}`);
+            const inscritosDelTorneo = Array.isArray(inscritos.data) ? inscritos.data : [];
             const estaInscrito = inscritosDelTorneo.some(
-              (inscrito) => inscrito.idUsuario === usuario.idUsuario,
+              (inscrito) => inscrito.idUsuario === usuario.idUsuario
             );
 
             if (!estaInscrito) continue;
@@ -171,15 +158,10 @@ function ArcherDashboard() {
 
             try {
               const flechasResp = await api.get(
-                `/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`,
+                `/torneos/${torneo.idTorneo}/arqueros/${usuario.idUsuario}/flechas`
               );
-              flechasDelTorneo = Array.isArray(flechasResp.data)
-                ? flechasResp.data
-                : [];
-              puntajeFinal = flechasDelTorneo.reduce(
-                (sum, flecha) => sum + (flecha.puntaje || 0),
-                0,
-              );
+              flechasDelTorneo = Array.isArray(flechasResp.data) ? flechasResp.data : [];
+              puntajeFinal = flechasDelTorneo.reduce((sum, flecha) => sum + (flecha.puntaje || 0), 0);
               flechasTodas.push(...flechasDelTorneo);
               flechasPorTorneoLocal[torneo.idTorneo] = flechasDelTorneo;
             } catch (errorFlechas) {
@@ -190,28 +172,21 @@ function ArcherDashboard() {
             for (const inscrito of inscritosDelTorneo) {
               try {
                 const flechasDelInscrito = await api.get(
-                  `/torneos/${torneo.idTorneo}/arqueros/${inscrito.idUsuario}/flechas`,
+                  `/torneos/${torneo.idTorneo}/arqueros/${inscrito.idUsuario}/flechas`
                 );
-                const puntajeDelInscrito = (
-                  flechasDelInscrito.data || []
-                ).reduce((sum, flecha) => sum + (flecha.puntaje || 0), 0);
-                rankingDelTorneo.push({
-                  idUsuario: inscrito.idUsuario,
-                  puntaje: puntajeDelInscrito,
-                });
+                const puntajeDelInscrito = (flechasDelInscrito.data || []).reduce(
+                  (sum, flecha) => sum + (flecha.puntaje || 0),
+                  0
+                );
+                rankingDelTorneo.push({ idUsuario: inscrito.idUsuario, puntaje: puntajeDelInscrito });
               } catch (errorRanking) {
-                rankingDelTorneo.push({
-                  idUsuario: inscrito.idUsuario,
-                  puntaje: 0,
-                });
+                rankingDelTorneo.push({ idUsuario: inscrito.idUsuario, puntaje: 0 });
               }
             }
 
             rankingDelTorneo.sort((a, b) => b.puntaje - a.puntaje);
             const posicionUsuario =
-              rankingDelTorneo.findIndex(
-                (item) => item.idUsuario === usuario.idUsuario,
-              ) + 1;
+              rankingDelTorneo.findIndex((item) => item.idUsuario === usuario.idUsuario) + 1;
             posicionFinal = posicionUsuario > 0 ? posicionUsuario : "-";
 
             participacionesDelUsuario.push({
@@ -228,14 +203,9 @@ function ArcherDashboard() {
           }
         }
 
-        const totalPages = Math.ceil(
-          participacionesDelUsuario.length / PAGE_SIZE,
-        );
+        const totalPages = Math.ceil(participacionesDelUsuario.length / PAGE_SIZE);
         const inicio = historialPage * PAGE_SIZE;
-        const pagina = participacionesDelUsuario.slice(
-          inicio,
-          inicio + PAGE_SIZE,
-        );
+        const pagina = participacionesDelUsuario.slice(inicio, inicio + PAGE_SIZE);
 
         setHistorial(pagina);
         setHistorialTotalPages(totalPages);
@@ -254,9 +224,7 @@ function ArcherDashboard() {
         });
 
         const payload = resp.data || {};
-        const torneosHistorial = Array.isArray(payload.torneos)
-          ? payload.torneos
-          : [];
+        const torneosHistorial = Array.isArray(payload.torneos) ? payload.torneos : [];
 
         const flechasPorTorneoLocal = {};
         const flechas = [];
@@ -267,9 +235,7 @@ function ArcherDashboard() {
 
           rondas.forEach((ronda) => {
             const numeroRonda = ronda?.numeroRonda;
-            const flechasRonda = Array.isArray(ronda?.flechas)
-              ? ronda.flechas
-              : [];
+            const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
 
             flechasRonda.forEach((flecha) => {
               const flechaConRonda = {
@@ -289,14 +255,16 @@ function ArcherDashboard() {
         setTodasLasFlechas(flechas);
         setFlechasPorTorneo(flechasPorTorneoLocal);
       } catch (err) {
-        if (esErrorAuth(err)) {
+        if (esErrorAuth(err) || err?.response?.status >= 500) {
           try {
             await fetchHistorialLegacy();
             return;
           } catch (legacyErr) {
-            setErrorCarga(
-              "Tu sesión no está autorizada para consultar historial. Vuelve a iniciar sesión.",
-            );
+            if (esErrorAuth(err)) {
+              setErrorCarga("Tu sesión no está autorizada para consultar historial. Vuelve a iniciar sesión.");
+            } else {
+              setErrorCarga("No se pudo cargar el historial con la ruta optimizada ni con el fallback.");
+            }
             setHistorial([]);
             setHistorialTotalPages(0);
             setTodasLasFlechas([]);
@@ -305,9 +273,7 @@ function ArcherDashboard() {
           }
         }
         console.error("Error traer historial:", err);
-        setErrorCarga(
-          "No se pudo cargar el historial. Revisa tu sesión o backend.",
-        );
+        setErrorCarga("No se pudo cargar el historial. Revisa tu sesión o backend.");
         setHistorial([]);
         setHistorialTotalPages(0);
         setTodasLasFlechas([]);
@@ -322,19 +288,11 @@ function ArcherDashboard() {
 
   const calcularEstadisticas = () => {
     const totalFlechas = todasLasFlechas.length;
-    const flechasAcertadas = todasLasFlechas.filter(
-      (f) => (f.puntaje || 0) > 0,
-    ).length;
+    const flechasAcertadas = todasLasFlechas.filter((f) => (f.puntaje || 0) > 0).length;
     const porcentajeAcierto =
-      totalFlechas > 0
-        ? Math.round((flechasAcertadas / totalFlechas) * 100)
-        : 0;
-    const totalPuntos = todasLasFlechas.reduce(
-      (sum, f) => sum + (f.puntaje || 0),
-      0,
-    );
-    const promedioPuntos =
-      totalFlechas > 0 ? (totalPuntos / totalFlechas).toFixed(1) : 0;
+      totalFlechas > 0 ? Math.round((flechasAcertadas / totalFlechas) * 100) : 0;
+    const totalPuntos = todasLasFlechas.reduce((sum, f) => sum + (f.puntaje || 0), 0);
+    const promedioPuntos = totalFlechas > 0 ? (totalPuntos / totalFlechas).toFixed(1) : 0;
 
     return {
       torneosTotales: historial.length,
@@ -346,18 +304,124 @@ function ArcherDashboard() {
     };
   };
 
+  // Detecta si el usuario ya está inscrito en un torneo
+  const estaInscrito = (idTorneo) => {
+    return historial.some((h) => h.idTorneo === idTorneo);
+  };
+
+  // Maneja la inscripción a un torneo
+  const handleInscribirse = async (torneo) => {
+    if (!usuario) return;
+
+    // Validaciones
+    if (torneo.estadoTorneo !== "NOT_STARTED") {
+      setErrorInscripcion(`El torneo debe estar en estado NOT_STARTED para inscribirse.`);
+      setTimeout(() => setErrorInscripcion(""), 3000);
+      return;
+    }
+
+    if (estaInscrito(torneo.idTorneo)) {
+      setErrorInscripcion(`Ya estás inscrito en este torneo.`);
+      setTimeout(() => setErrorInscripcion(""), 3000);
+      return;
+    }
+
+    setInscribiendoTorneo(torneo.idTorneo);
+    setErrorInscripcion("");
+
+    try {
+      const response = await api.post("/participaciones/inscribir", null, {
+        params: {
+          idTorneo: torneo.idTorneo,
+          idUsuario: usuario.idUsuario,
+        },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        // Agregar el torneo al historial localmente
+        setHistorial([
+          ...historial,
+          {
+            idTorneo: torneo.idTorneo,
+            nombreTorneo: torneo.nombreTorneo,
+            puntajeFinal: 0,
+            posicionFinal: "-",
+            fechaInicio: torneo.fechaInicio,
+            estadoTorneo: torneo.estadoTorneo,
+            rondas: [],
+          },
+        ]);
+        setInscribiendoTorneo(null);
+      }
+    } catch (err) {
+      const mensajeError =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Error al inscribirse. Intenta de nuevo.";
+      setErrorInscripcion(String(mensajeError));
+      setTimeout(() => setErrorInscripcion(""), 4000);
+      setInscribiendoTorneo(null);
+    }
+  };
+
+  // Maneja la desinscripción de un torneo
+  const handleDesinscribirse = async (torneo) => {
+    if (!usuario) return;
+
+    // Validaciones
+    if (torneo.estadoTorneo !== "NOT_STARTED") {
+      setErrorDesinscripcion(`No puedes desinscribirse de un torneo que ya inició.`);
+      setTimeout(() => setErrorDesinscripcion(""), 3000);
+      return;
+    }
+
+    // Verificar si tiene flechas registradas
+    const flechasDelTorneo = flechasPorTorneo[torneo.idTorneo] || [];
+    if (flechasDelTorneo.length > 0) {
+      setErrorDesinscripcion(`No puedes desinscribirse: ya tienes flechas registradas en este torneo.`);
+      setTimeout(() => setErrorDesinscripcion(""), 3000);
+      return;
+    }
+
+    // Confirmación
+    if (!window.confirm(`¿Estás seguro de que deseas desinscribirse de "${torneo.nombreTorneo}"?`)) {
+      return;
+    }
+
+    setDesinscribiendoTorneo(torneo.idTorneo);
+    setErrorDesinscripcion("");
+
+    try {
+      const response = await api.delete("/participaciones/desinscribir", {
+        params: {
+          idTorneo: torneo.idTorneo,
+          idUsuario: usuario.idUsuario,
+        },
+      });
+
+      if (response.status === 200) {
+        // Eliminar el torneo del historial localmente
+        setHistorial(historial.filter((h) => h.idTorneo !== torneo.idTorneo));
+        setDesinscribiendoTorneo(null);
+      }
+    } catch (err) {
+      const mensajeError =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Error al desinscribirse. Intenta de nuevo.";
+      setErrorDesinscripcion(String(mensajeError));
+      setTimeout(() => setErrorDesinscripcion(""), 4000);
+      setDesinscribiendoTorneo(null);
+    }
+  };
+
   const stats = calcularEstadisticas();
 
   const torneosArray = Array.isArray(torneos) ? torneos : [];
   const historialArray = Array.isArray(historial) ? historial : [];
-  const puntosMaximos = Math.max(
-    ...historialArray.map((item) => item.puntajeFinal || 0),
-    1,
-  );
+  const puntosMaximos = Math.max(...historialArray.map((item) => item.puntajeFinal || 0), 1);
   const porcentajeAcierto =
-    stats.totalFlechas > 0
-      ? Math.round((stats.flechasAcertadas / stats.totalFlechas) * 100)
-      : 0;
+    stats.totalFlechas > 0 ? Math.round((stats.flechasAcertadas / stats.totalFlechas) * 100) : 0;
 
   const torneosDisponibles = torneosArray;
   const torneosPaginados = torneosDisponibles;
@@ -370,10 +434,7 @@ function ArcherDashboard() {
 
     if (total === 0) {
       return (
-        <div
-          className="d-flex align-items-center justify-content-center bg-light rounded-circle border mx-auto"
-          style={{ width: 180, height: 180 }}
-        >
+        <div className="d-flex align-items-center justify-content-center bg-light rounded-circle border mx-auto" style={{ width: 180, height: 180 }}>
           <span className="text-muted">Sin datos</span>
         </div>
       );
@@ -381,20 +442,14 @@ function ArcherDashboard() {
 
     const aciertoPorcentaje = (acertadas / total) * 100;
     return (
-      <div
-        className="position-relative mx-auto"
-        style={{ width: 180, height: 180 }}
-      >
+      <div className="position-relative mx-auto" style={{ width: 180, height: 180 }}>
         <div
           className="rounded-circle w-100 h-100"
           style={{
             background: `conic-gradient(#28a745 0 ${aciertoPorcentaje}%, #dc3545 ${aciertoPorcentaje}% 100%)`,
           }}
         />
-        <div
-          className="position-absolute top-50 start-50 translate-middle text-center bg-white rounded-circle d-flex flex-column justify-content-center align-items-center border"
-          style={{ width: 110, height: 110 }}
-        >
+        <div className="position-absolute top-50 start-50 translate-middle text-center bg-white rounded-circle d-flex flex-column justify-content-center align-items-center border" style={{ width: 110, height: 110 }}>
           <strong className="fs-4">{porcentajeAcierto}%</strong>
           <small className="text-muted">acierto</small>
         </div>
@@ -413,11 +468,7 @@ function ArcherDashboard() {
   return (
     <div className="container-fluid py-4 px-4">
       <h1>Mi Perfil de Arquero</h1>
-      {usuario && (
-        <p className="text-muted">
-          {usuario.nombre} (ID: {usuario.idUsuario})
-        </p>
-      )}
+      {usuario && <p className="text-muted">{usuario.nombre} (ID: {usuario.idUsuario})</p>}
       {errorCarga && <div className="alert alert-danger">{errorCarga}</div>}
 
       <section className="mb-5">
@@ -455,25 +506,8 @@ function ArcherDashboard() {
               <h6 className="mb-3">Aciertos vs Fallos</h6>
               {renderPieGrafico()}
               <div className="d-flex justify-content-center gap-3 mt-3 small">
-                <span>
-                  <span
-                    className="badge me-1"
-                    style={{ backgroundColor: "#28a745" }}
-                  >
-                    &nbsp;
-                  </span>
-                  Acertadas: {stats.flechasAcertadas}
-                </span>
-                <span>
-                  <span
-                    className="badge me-1"
-                    style={{ backgroundColor: "#dc3545" }}
-                  >
-                    &nbsp;
-                  </span>
-                  Fallidas:{" "}
-                  {Math.max(stats.totalFlechas - stats.flechasAcertadas, 0)}
-                </span>
+                <span><span className="badge me-1" style={{ backgroundColor: "#28a745" }}>&nbsp;</span>Acertadas: {stats.flechasAcertadas}</span>
+                <span><span className="badge me-1" style={{ backgroundColor: "#dc3545" }}>&nbsp;</span>Fallidas: {Math.max(stats.totalFlechas - stats.flechasAcertadas, 0)}</span>
               </div>
             </div>
           </div>
@@ -482,9 +516,7 @@ function ArcherDashboard() {
             <div className="card p-3 h-100">
               <h6 className="mb-3">Puntos por Torneo</h6>
               {historialArray.length === 0 ? (
-                <div className="alert alert-light border mb-0">
-                  Todavía no hay torneos en el historial para graficar.
-                </div>
+                <div className="alert alert-light border mb-0">Todavía no hay torneos en el historial para graficar.</div>
               ) : (
                 <div className="d-flex flex-column gap-3">
                   {historialArray.map((item) => {
@@ -518,67 +550,89 @@ function ArcherDashboard() {
 
       <section className="mb-5">
         <h5 className="mb-3">Mi Historial</h5>
+        {errorDesinscripcion && (
+          <div className="alert alert-danger alert-dismissible fade show" role="alert">
+            {errorDesinscripcion}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setErrorDesinscripcion("")}
+            ></button>
+          </div>
+        )}
         {historialCargando ? (
           <div className="alert alert-info">Cargando...</div>
         ) : historial.length === 0 ? (
-          <div className="alert alert-warning">
-            No hay torneos registrados aún.
-          </div>
+          <div className="alert alert-warning">No hay torneos registrados aún.</div>
         ) : (
           <>
             <div className="row">
               {historialPaginado.map((item) => (
                 <div className="col-md-6 mb-3" key={item.idTorneo}>
-                  <div
-                    className="card p-3 shadow-sm"
-                    style={{ cursor: "pointer" }}
-                  >
-                    <h6 className="mb-1">{item.nombreTorneo}</h6>
+                  <div className="card p-3 shadow-sm" style={{ cursor: "pointer" }}>
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 className="mb-1">{item.nombreTorneo}</h6>
+                        <span
+                          className={`badge ${
+                            item.estadoTorneo === "NOT_STARTED"
+                              ? "bg-success"
+                              : item.estadoTorneo === "IN_COURSE"
+                              ? "bg-warning text-dark"
+                              : "bg-secondary"
+                          }`}
+                        >
+                          {item.estadoTorneo}
+                        </span>
+                      </div>
+                      {item.estadoTorneo === "NOT_STARTED" &&
+                        (flechasPorTorneo[item.idTorneo] || []).length === 0 && (
+                          <button
+                            className="btn btn-sm btn-danger ms-2"
+                            onClick={() => handleDesinscribirse(item)}
+                            disabled={desinscribiendoTorneo === item.idTorneo}
+                            title="Desinscribirse de este torneo"
+                          >
+                            {desinscribiendoTorneo === item.idTorneo ? "..." : "✕"}
+                          </button>
+                        )}
+                    </div>
                     <p className="mb-1">
                       Puntaje: <strong>{item.puntajeFinal}</strong>
                     </p>
                     <p className="mb-0">
                       Posición: <strong>{item.posicionFinal}°</strong>
                     </p>
-                    <details className="mt-2">
-                      <summary className="small" style={{ cursor: "pointer" }}>
-                        Ver flechas (
-                        {(flechasPorTorneo[item.idTorneo] || []).length})
-                      </summary>
-                      <div className="mt-2 small">
-                        {(() => {
-                          const flechasFor =
-                            flechasPorTorneo[item.idTorneo] || [];
-                          if (flechasFor.length === 0)
-                            return (
-                              <div className="text-muted">
-                                Sin flechas registradas
-                              </div>
-                            );
-                          const agrupadas = flechasFor.reduce((acc, f) => {
-                            const r = f.numeroRonda || 0;
-                            if (!acc[r]) acc[r] = [];
-                            acc[r].push(f);
-                            return acc;
-                          }, {});
+                      <details className="mt-2">
+                        <summary className="small" style={{ cursor: "pointer" }}>
+                          Ver flechas ({(flechasPorTorneo[item.idTorneo] || []).length})
+                        </summary>
+                        <div className="mt-2 small">
+                          {(() => {
+                            const flechasFor = flechasPorTorneo[item.idTorneo] || [];
+                            if (flechasFor.length === 0) return <div className="text-muted">Sin flechas registradas</div>;
+                            const agrupadas = flechasFor.reduce((acc, f) => {
+                              const r = f.numeroRonda || 0;
+                              if (!acc[r]) acc[r] = [];
+                              acc[r].push(f);
+                              return acc;
+                            }, {});
 
-                          return Object.keys(agrupadas)
-                            .sort((a, b) => Number(a) - Number(b))
-                            .map((r) => (
-                              <div key={r} className="mb-2">
-                                <strong>Ronda {r}</strong>
-                                <ul className="mb-0">
-                                  {agrupadas[r].map((f) => (
-                                    <li key={f.idFlecha}>
-                                      Flecha {f.idFlecha}: {f.puntaje}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ));
-                        })()}
-                      </div>
-                    </details>
+                            return Object.keys(agrupadas)
+                              .sort((a, b) => Number(a) - Number(b))
+                              .map((r) => (
+                                <div key={r} className="mb-2">
+                                  <strong>Ronda {r}</strong>
+                                  <ul className="mb-0">
+                                    {agrupadas[r].map((f) => (
+                                      <li key={f.idFlecha}>Flecha {f.idFlecha}: {f.puntaje}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ));
+                          })()}
+                        </div>
+                      </details>
                   </div>
                 </div>
               ))}
@@ -590,9 +644,7 @@ function ArcherDashboard() {
                   <button
                     key={i}
                     className={`btn btn-sm me-1 ${
-                      i === historialPage
-                        ? "btn-primary"
-                        : "btn-outline-secondary"
+                      i === historialPage ? "btn-primary" : "btn-outline-secondary"
                     }`}
                     onClick={() => setHistorialPage(i)}
                   >
@@ -607,12 +659,20 @@ function ArcherDashboard() {
 
       <section className="mb-5">
         <h5 className="mb-3">Torneos Disponibles</h5>
+        {errorInscripcion && (
+          <div className="alert alert-danger alert-dismissible fade show" role="alert">
+            {errorInscripcion}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setErrorInscripcion("")}
+            ></button>
+          </div>
+        )}
         {torneosCargando ? (
           <div className="alert alert-info">Cargando torneos...</div>
         ) : torneosDisponibles.length === 0 ? (
-          <div className="alert alert-warning">
-            No hay torneos disponibles para inscripción.
-          </div>
+          <div className="alert alert-warning">No hay torneos disponibles para inscripción.</div>
         ) : (
           <>
             <div className="row">
@@ -625,13 +685,32 @@ function ArcherDashboard() {
                         <small className="text-muted">
                           {t.fechaInicio} — {t.fechaTermino}
                         </small>
+                        <div className="mt-1">
+                          <span
+                            className={`badge ${
+                              t.estadoTorneo === "NOT_STARTED"
+                                ? "bg-success"
+                                : t.estadoTorneo === "IN_COURSE"
+                                ? "bg-warning text-dark"
+                                : "bg-secondary"
+                            }`}
+                          >
+                            {t.estadoTorneo}
+                          </span>
+                        </div>
                       </div>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={() => console.log("Inscribirse:", t.idTorneo)}
-                      >
-                        Inscribirme
-                      </button>
+                      {t.estadoTorneo === "NOT_STARTED" && !estaInscrito(t.idTorneo) && (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleInscribirse(t)}
+                          disabled={inscribiendoTorneo === t.idTorneo}
+                        >
+                          {inscribiendoTorneo === t.idTorneo ? "Inscribiendo..." : "Inscribirme"}
+                        </button>
+                      )}
+                      {estaInscrito(t.idTorneo) && (
+                        <span className="badge bg-info text-dark">Ya inscrito</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -644,9 +723,7 @@ function ArcherDashboard() {
                   <button
                     key={i}
                     className={`btn btn-sm me-1 ${
-                      i === torneosPage
-                        ? "btn-primary"
-                        : "btn-outline-secondary"
+                      i === torneosPage ? "btn-primary" : "btn-outline-secondary"
                     }`}
                     onClick={() => setTorneosPage(i)}
                   >
