@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 
 function ArcherDashboard() {
-  const PAGE_SIZE = 4;
+  const PAGE_SIZE = 6;
   const navigate = useNavigate();
 
   const [usuario, setUsuario] = useState(null);
@@ -742,3 +742,9 @@ function ArcherDashboard() {
 }
 
 export default ArcherDashboard;
+
+
+
+// TRUNCATE TABLE flecha, ronda, participacion, torneo, logs, usuario, categoria, puntaje_ronda RESTART IDENTITY CASCADE;
+
+// docker exec -i database-archery psql -U archeryUser -d archeryDb < /home/martin/Descargas/BDA/Laboratorios/Lab1/Codigo-fuente/BDA-Laboratorio_1/database/05-loadData.sql
