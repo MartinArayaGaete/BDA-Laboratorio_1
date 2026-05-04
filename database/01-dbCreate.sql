@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS logs (
     fecha_editado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     torneo_afectado BIGINT NOT NULL,
     ronda_afectada BIGINT NOT NULL,
-    puntaje_anterior DECIMAL,
-    puntaje_nuevo DECIMAL,
+    puntaje_anterior INT,
+    puntaje_nuevo INT,
     FOREIGN KEY (id_admin) REFERENCES usuario(id_usuario),
     FOREIGN KEY (id_afectado) REFERENCES usuario(id_usuario)
 );
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS participacion (
     id_participacion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_usuario BIGINT NOT NULL,
     id_torneo BIGINT NOT NULL,
-    puntaje_final DECIMAL,
+    puntaje_final INT,
     posicion_final INT,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS puntaje_ronda (
     id_puntaje_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_ronda BIGINT NOT NULL,
     id_participacion BIGINT NOT NULL,
-    puntaje_ronda DECIMAL,
+    puntaje_ronda INT,
 
     CONSTRAINT unique_ronda_participacion
     UNIQUE (id_ronda, id_participacion),
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS puntaje_ronda (
 CREATE TABLE IF NOT EXISTS flecha (
     id_flecha BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_puntaje_ronda BIGINT NOT NULL,
-    puntaje DECIMAL,
+    puntaje INT NOT NULL,
     FOREIGN KEY (id_puntaje_ronda) REFERENCES puntaje_ronda(id_puntaje_ronda) ON DELETE CASCADE
 );
 
