@@ -19,7 +19,6 @@ function NavbarLayout({ children }) {
     navigate("/login");
   };
 
-  // OBJETO DE ESTILOS (Faltaba en tu código)
   const styles = {
     nav: {
       backgroundColor: "#1A1A1A",
@@ -43,7 +42,6 @@ function NavbarLayout({ children }) {
         style={styles.nav}
       >
         <div className="container-fluid">
-          {/* Logo */}
           <Link
             className="navbar-brand d-flex align-items-center fw-bold text-uppercase"
             to="/"
@@ -64,7 +62,6 @@ function NavbarLayout({ children }) {
             Arquería
           </Link>
 
-          {/* Botón Hamburguesa */}
           <button
             className="navbar-toggler border-0"
             type="button"
@@ -73,13 +70,11 @@ function NavbarLayout({ children }) {
             <span className="navbar-toggler-icon"></span>
           </button>
 
-          {/* Menú de Enlaces */}
           <div
             className={`${isNavCollapsed ? "collapse" : ""} navbar-collapse`}
             id="navbarNav"
           >
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              {/* Enlace común para todos */}
               <li className="nav-item">
                 <Link
                   style={styles.navLink(location.pathname === "/leaderboard")}
@@ -90,7 +85,6 @@ function NavbarLayout({ children }) {
                 </Link>
               </li>
 
-              {/* Enlaces según ROL */}
               {userInfo?.rol === "ADMIN" ? (
                 <>
                   <li className="nav-item">
@@ -127,8 +121,7 @@ function NavbarLayout({ children }) {
               )}
             </ul>
 
-            {/* Información de Usuario y Logout */}
-            <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-3 mt-3 mt-lg-0">
               <div className="text-end d-none d-lg-block">
                 <div className="text-white small fw-bold">
                   {userInfo?.nombre}
@@ -151,7 +144,6 @@ function NavbarLayout({ children }) {
         </div>
       </nav>
 
-      {/* Contenido Dinámico */}
       <main
         className="flex-grow-1 p-3 p-md-4 overflow-auto"
         style={{ backgroundColor: "#F8F9FA" }}

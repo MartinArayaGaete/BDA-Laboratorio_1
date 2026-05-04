@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/torneos/*/finalizar").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/torneos/*/rondas/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/torneos/registrar-puntaje").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/logs", "/api/logs/**").hasRole("ADMIN")
 
                         //  Rutas Compartidas
                         .requestMatchers(HttpMethod.POST, "/api/participaciones/inscribir").hasAnyRole("ADMIN", "ARQUERO")
