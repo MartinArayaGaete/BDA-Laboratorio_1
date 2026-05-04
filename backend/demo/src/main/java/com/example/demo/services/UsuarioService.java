@@ -54,20 +54,24 @@ public class UsuarioService {
     }
 
     public Optional<Usuario> validarLogin(String rut, String rawPassword) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.buscarPorRut(rut);
+        String rutLimpio = rut.replace(".", "").replace(",", "").trim().toUpperCase();
+
+        Optional<Usuario> usuarioOpt = usuarioRepository.buscarPorRut(rutLimpio);
 
         if (usuarioOpt.isEmpty()) {
+            System.out.println("Login fallido: RUT " + rutLimpio + " no encontrado.");
             return Optional.empty();
         }
 
         Usuario usuario = usuarioOpt.get();
         String passwordBD = usuario.getContrasena();
 
-        // Comparación sin encriptar
-        if (rawPassword.equals(passwordBD)) {
+        // Comparación literal
+        if (rawPassword.trim().equals(passwordBD.trim())) {
             return Optional.of(usuario);
         }
 
+        System.out.println("Login fallido: Contraseña incorrecta para el usuario " + rutLimpio);
         return Optional.empty();
     }
 

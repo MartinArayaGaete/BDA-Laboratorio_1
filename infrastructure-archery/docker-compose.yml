@@ -7,7 +7,6 @@ services:
     ports:
       - "${FRONT_PORT:-3000}:3000"
     environment:
-      # ... tus env vars ...
       TZ: "${APP_TIMEZONE:-America/Santiago}"
     volumes:
       - ../frontend/mi-app:/app

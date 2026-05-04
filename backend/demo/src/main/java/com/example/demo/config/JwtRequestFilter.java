@@ -40,7 +40,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String rut = null;
         String rol = null;
 
-        // Buscar en las Cookies primero
+        // 1. Intentar obtener el token de las Cookies
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("token_acceso".equals(cookie.getName())) {
@@ -50,7 +50,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
 
-        // Si no hay cookie, buscar en el Header Authorization (Manual/Postman)
+        // 2. Si no hay cookie, buscar en el Header Authorization (útil para Postman)
         if (token == null) {
             String authorizationHeader = request.getHeader("Authorization");
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -58,35 +58,40 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
 
-        // Si encontramos el token, extraemos los datos
+        // 3. Procesar el token solo si existe
         if (token != null) {
             try {
                 rut = jwtUtils.extractRut(token);
                 rol = jwtUtils.extractClaim(token, claims -> claims.get("rol", String.class));
+
+                // Si tenemos RUT y no hay una autenticación previa en el contexto
+                if (rut != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(rut);
+
+                    if (jwtUtils.validateToken(token)) {
+                        // Importante: Asegurar el prefijo ROLE_ para que coincida con hasRole en SecurityConfig
+                        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + rol);
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, List.of(authority));
+
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                        // Establecemos la identidad en el contexto de seguridad
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                }
             } catch (ExpiredJwtException e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expirado");
-                return;
+                // LOG: El token expiró, pero no bloqueamos la cadena.
+                // Spring Security decidirá si el acceso es denegado basándose en SecurityConfig.
+                logger.warn("JWT detectado pero está expirado.");
             } catch (Exception e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error al procesar el token");
-                return;
+                // LOG: Error de parseo o token malformado.
+                logger.error("Error al procesar el token JWT.");
             }
         }
 
-        // Si tenemos el RUT válido, autorizamos en Spring Security
-        if (rut != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(rut);
-
-            if (jwtUtils.validateToken(token)) {
-                GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + rol);
-                List<GrantedAuthority> authorities = List.of(authority);
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        }
-
+        // 4. CONTINUAR SIEMPRE: Esto permite que el login (permitido para todos) funcione
+        // incluso si el cliente envió un token inválido de una sesión anterior.
         filterChain.doFilter(request, response);
     }
 }
